@@ -48,13 +48,23 @@ public class MyPolygon {
 	private BitmapDescriptor iconSelected;
 	private BitmapDescriptor icon;
 
-	private MyPolygonListener listener;
+	private MyPolygonListener listener = null;
 	private Marker textMarker = null;
 	private String textMarkerString = "";
 
 	
 	public interface MyPolygonListener {
 		public void MyPolygonUpdateAcres(Float acres);
+	}
+	
+	
+	public MyPolygon(GoogleMap map, Polygon polygon) {
+		this.markers = new ArrayList<Marker>();
+		this.map = map;
+		this.polygon = polygon;
+		iconSelected = BitmapDescriptorFactory
+				.fromResource(R.drawable.selected_vertex);
+		icon = BitmapDescriptorFactory.fromResource(R.drawable.unselected_vertex);
 	}
 	
 	public MyPolygon(GoogleMap map, Polygon polygon, Activity activity) {
@@ -332,7 +342,7 @@ public class MyPolygon {
 			newArea = (float) (total1 - total2);
 			newArea = Math.abs(newArea) / (2.0f * 4046.68f);
 
-			listener.MyPolygonUpdateAcres(newArea);
+			if(listener != null) listener.MyPolygonUpdateAcres(newArea);
 
 			if (polyline != null) {
 				// remove polyline
@@ -342,7 +352,7 @@ public class MyPolygon {
 		}
 		
 		if(markers.size() < 3){
-			listener.MyPolygonUpdateAcres(0.0f);
+			if(listener != null) listener.MyPolygonUpdateAcres(0.0f);
 		}
 		
 		

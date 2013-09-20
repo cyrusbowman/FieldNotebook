@@ -19,7 +19,8 @@ public class Note {
 	private String fieldName = null;
 	private String comment = null;
 	private String strPolygons = null;
-	private List<PolygonOptions> polygons;
+	private List<MyPolygon> myPolygons = new ArrayList<MyPolygon>();
+	private List<PolygonOptions> polygons = null;
 	//private List<MyLine> lines;
 	//private List<MyPoint> points;
 	private Integer color = null;
@@ -31,6 +32,37 @@ public class Note {
 	}
 	public Note(String fieldName){
 		this.fieldName = fieldName;
+	}
+	
+	public void addMyPolygon(MyPolygon polygon){
+		this.myPolygons.add(polygon);
+	}
+	public void myPolygonsToStringPolygons(){
+		StringBuilder buildNewPolygons = new StringBuilder();
+		for(int i=0; i<myPolygons.size(); i++){
+			List<LatLng> points = myPolygons.get(i).getPoints();
+			if(points != null && points.isEmpty() == false){
+				// Generate boundary
+				StringBuilder newBoundary = new StringBuilder(points.size() * 20);
+				for (int j = 0; j < points.size(); j++) {
+					newBoundary.append(points.get(j).latitude);
+					newBoundary.append(",");
+					newBoundary.append(points.get(j).longitude);
+					newBoundary.append(",");
+				}
+				newBoundary.deleteCharAt(newBoundary.length() - 1);
+				buildNewPolygons.append(newBoundary.toString() + ";");
+			}
+		}
+		if(buildNewPolygons.length() > 0){
+			buildNewPolygons.deleteCharAt(buildNewPolygons.length() - 1);
+		}
+		this.strPolygons = buildNewPolygons.toString();
+	}
+	public void removePolygons(){
+		for(int i=0; i<myPolygons.size(); i++){
+			myPolygons.get(i).remove();
+		}
 	}
 	
 	public Integer getId() {
@@ -59,21 +91,23 @@ public class Note {
 		List<PolygonOptions> polygons = new ArrayList<PolygonOptions>();
 
 		String allPolygons = this.getStrPolygons();
-		StringTokenizer tokensBoundarys = new StringTokenizer(allPolygons, ";");
-		while (tokensBoundarys.hasMoreTokens()) {
-			PolygonOptions polygonOptions = new PolygonOptions();
-			polygonOptions.fillColor(Field.FILL_COLOR_NOT_PLANNED);
-			polygonOptions.strokeWidth(Field.STROKE_WIDTH);
-			polygonOptions.strokeColor(Field.STROKE_COLOR);
-			
-			String boundary = tokensBoundarys.nextToken();
-			StringTokenizer tokensPoints = new StringTokenizer(boundary, ",");
-			while (tokensPoints.hasMoreTokens()) {
-				String lat = tokensPoints.nextToken();
-				String lng = tokensPoints.nextToken();
-				polygonOptions.add(new LatLng(Double.parseDouble(lat), Double.parseDouble(lng)));
+		if(allPolygons != null){
+			StringTokenizer tokensBoundarys = new StringTokenizer(allPolygons, ";");
+			while (tokensBoundarys.hasMoreTokens()) {
+				PolygonOptions polygonOptions = new PolygonOptions();
+				polygonOptions.fillColor(Field.FILL_COLOR_NOT_PLANNED);
+				polygonOptions.strokeWidth(Field.STROKE_WIDTH);
+				polygonOptions.strokeColor(Field.STROKE_COLOR);
+				
+				String boundary = tokensBoundarys.nextToken();
+				StringTokenizer tokensPoints = new StringTokenizer(boundary, ",");
+				while (tokensPoints.hasMoreTokens()) {
+					String lat = tokensPoints.nextToken();
+					String lng = tokensPoints.nextToken();
+					polygonOptions.add(new LatLng(Double.parseDouble(lat), Double.parseDouble(lng)));
+				}
+				polygons.add(polygonOptions);
 			}
-			polygons.add(polygonOptions);
 		}
 		return polygons;
 	}
@@ -104,7 +138,7 @@ public class Note {
 	public void setComment(String comment) {
 		this.comment = comment;
 	}
-	public void setStringPolygons(String strPolygons) {
+	public void setStrPolygons(String strPolygons) {
 		this.strPolygons = strPolygons;
 	}
 	public void setPolygons(List<PolygonOptions> polygons) {
@@ -129,7 +163,7 @@ public class Note {
 			note.setDateChanged(cursor.getString(cursor.getColumnIndex(TableNotes.COL_DATE_CHANGED)));
 			note.setFieldName(cursor.getString(cursor.getColumnIndex(TableNotes.COL_FIELD_NAME)));
 			note.setComment(cursor.getString(cursor.getColumnIndex(TableNotes.COL_COMMENT)));
-			note.setStringPolygons(cursor.getString(cursor.getColumnIndex(TableNotes.COL_POLYGONS)));
+			note.setStrPolygons(cursor.getString(cursor.getColumnIndex(TableNotes.COL_POLYGONS)));
 			//TODO lines, points
 			note.setColor(cursor.getInt(cursor.getColumnIndex(TableNotes.COL_COLOR)));
 			note.setVisible(cursor.getInt(cursor.getColumnIndex(TableNotes.COL_VISIBLE)));

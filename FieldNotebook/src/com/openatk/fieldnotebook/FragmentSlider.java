@@ -5,6 +5,7 @@ import java.util.List;
 
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.PolygonOptions;
 import com.openatk.fieldnotebook.db.DatabaseHelper;
 import com.openatk.fieldnotebook.db.Field;
 import com.openatk.fieldnotebook.db.Note;
@@ -31,6 +32,7 @@ import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
+import android.widget.RelativeLayout.LayoutParams;
 import android.widget.ScrollView;
 import android.widget.TextView;
 
@@ -50,10 +52,11 @@ public class FragmentSlider extends Fragment implements OnClickListener, OnTouch
 	
 	private SliderListener listener;
 	private Field currentField = null;
-	private List<Note> notes;
+	private List<Note> notes = null;
 	
 	private DatabaseHelper dbHelper;
 	private Note currentNote = null;
+	private RelativeLayout currentNoteView = null;
 	
 	LayoutInflater vi;
 	
@@ -68,6 +71,7 @@ public class FragmentSlider extends Fragment implements OnClickListener, OnTouch
 		public void SliderRequestData();
 		public void  SliderCompletePolygon();
 		public void SliderAddPolygon();
+		public void SliderAddNote();
 	}
 
 	@Override
@@ -110,9 +114,10 @@ public class FragmentSlider extends Fragment implements OnClickListener, OnTouch
 
 	public void populateData(Integer currentFieldId, GoogleMap map) {
 		this.map = map;
-		
+				
 		//Clear current
 		listNotes.removeAllViews();
+		this.onClose();
 		
 		//Get current field
 		currentField = null;
@@ -125,6 +130,7 @@ public class FragmentSlider extends Fragment implements OnClickListener, OnTouch
 			tvAcres.setText(Integer.toString(currentField.getAcres()) + " ac");
 			//Add all notes for this field
 			notes = Note.FindNotesByFieldName(dbHelper.getReadableDatabase(), currentField.getName());
+			dbHelper.close();
 			for(int i=0; i<notes.size(); i++){
 				//Add note to list
 				listNotes.addView(inflateNote(notes.get(i)));
@@ -137,54 +143,10 @@ public class FragmentSlider extends Fragment implements OnClickListener, OnTouch
 	}
 	
 	public void finishPolygon(MyPolygon newPolygon){
-		newPolygon.setStrokeColor(Field.STROKE_COLOR);
-		
-		List<LatLng> points = newPolygon.getPoints();
-		
-		Boolean wasAnEdit = false; //TODO edit polygons
-		String strNewBoundary = "";
-		if(points != null && points.isEmpty() == false){
-			// Generate boundary
-			StringBuilder newBoundary = new StringBuilder(
-					points.size() * 20);
-			for (int i = 0; i < points.size(); i++) {
-				newBoundary.append(points.get(i).latitude);
-				newBoundary.append(",");
-				newBoundary.append(points.get(i).longitude);
-				newBoundary.append(",");
-			}
-			newBoundary.deleteCharAt(newBoundary.length() - 1);
-			strNewBoundary = newBoundary.toString();
+		if(currentNote != null){
+			newPolygon.setStrokeColor(Field.STROKE_COLOR);
+			currentNote.addMyPolygon(newPolygon); //Adds a mypolygon
 		}
-		
-		/*
-		// Save this field to the db
-		SQLiteDatabase database = dbHelper.getWritableDatabase();
-		ContentValues values = new ContentValues();
-		values.put(TableFields.COL_NAME, currentField.getName());
-		values.put(TableFields.COL_ACRES, currentField.getAcres());
-		values.put(TableFields.COL_BOUNDARY, strNewBoundary);
-		
-		//TODO only update if something changed
-		values.put(TableFields.COL_HAS_CHANGED, 1);
-		values.put(TableFields.COL_DATE_CHANGED, DatabaseHelper.dateToStringUTC(new Date()));
-
-		if (wasAnEdit == false) {
-			database.update(
-					TableFields.TABLE_NAME,
-					values,
-					TableFields.COL_ID + " = "
-							+ Integer.toString(currentField.getId()),
-					null);
-		} else {
-			database.update(
-					TableFields.TABLE_NAME,
-					values,
-					TableFields.COL_ID + " = "
-							+ Integer.toString(currentField.getId()),
-					null);
-		}
-		dbHelper.close();*/
 	}
 	
 	private View inflateNote(Note note){
@@ -198,21 +160,32 @@ public class FragmentSlider extends Fragment implements OnClickListener, OnTouch
 		noteView.imgPoints = (ImageView) view.findViewById(R.id.note_imgPoints);
 		noteView.imgLines = (ImageView) view.findViewById(R.id.note_imgLines);
 		noteView.imgPolygons = (ImageView) view.findViewById(R.id.note_imgPolygons);
+		noteView.row1 = (RelativeLayout) view.findViewById(R.id.note_row1);
 		noteView.row2 = (RelativeLayout) view.findViewById(R.id.note_row2);
 		noteView.note = note;
 		
 		
 		noteView.tvComment.setText(note.getComment());
+		
 		noteView.butEdit.setTag(noteView);
 		noteView.butShowHide.setTag(noteView);
-		
+		noteView.row1.setTag(noteView);
+
 		noteView.butEdit.setOnClickListener(noteClickListener);
 		noteView.butShowHide.setOnClickListener(noteClickListener);
+		noteView.row1.setOnClickListener(noteClickListener);
 		
 		if(note.getVisible() == 1){
 			noteView.butShowHide.setImageResource(R.drawable.note_but_hide);
 		} else {
 			noteView.butShowHide.setImageResource(R.drawable.note_but_show);
+		}
+		
+		
+		//Add polygons from note to map
+		List<PolygonOptions> polygons = note.getPolygons(); //Gets map polygons
+		for(int i =0; i<polygons.size(); i++){
+			note.addMyPolygon(new MyPolygon(map, map.addPolygon(polygons.get(i)))); //Adds back my polygons
 		}
 		
 		noteView.me = view;
@@ -229,6 +202,9 @@ public class FragmentSlider extends Fragment implements OnClickListener, OnTouch
 				
 			} else if(v.getId() == R.id.note_butShowHide){
 				
+			} else if(v.getId() == R.id.note_row1){
+				Log.d("FragmentSlider", "Clicked Note, select it now");
+				listNotes.removeView(noteView.me);
 			}
 		}
 	};
@@ -242,6 +218,7 @@ public class FragmentSlider extends Fragment implements OnClickListener, OnTouch
 		ImageView imgPoints;
 		ImageView imgLines;
 		ImageView imgPolygons;
+		RelativeLayout row1;
 		RelativeLayout row2;
 		RelativeLayout layNote;
 		Note note;
@@ -332,7 +309,12 @@ public class FragmentSlider extends Fragment implements OnClickListener, OnTouch
 		ContentValues values = new ContentValues();
 		values.put(TableNotes.COL_COMMENT,note.getComment());
 		values.put(TableNotes.COL_FIELD_NAME,note.getFieldName());
-		//values.put(TableNotes.COL_POLYGONS, note.getStrPolygons());
+		
+		//Save current my polygons to strpolygons
+		note.myPolygonsToStringPolygons();
+		//Save the polygons
+		values.put(TableNotes.COL_POLYGONS, note.getStrPolygons());
+		Log.d("SaveNote", "StrPolygons:" + note.getStrPolygons());
 		
 		//TODO more stuff
 		if(note.getId() == null){
@@ -358,10 +340,30 @@ public class FragmentSlider extends Fragment implements OnClickListener, OnTouch
 		}
 		Log.d("FragmentSlider", "Attached");
 	}
+	
+	public void onClose(){
+		//Remove all notes polygons
+		Log.d("FragmentSlider", "onClose");
+		if(notes != null){
+			for(int i=0; i<notes.size(); i++){
+				notes.get(i).removePolygons();
+			}
+		}
+	}
 
 	public int getHeight() {
 		// Method so close transition can work
 		return getView().getHeight();
+	}
+	
+	public int oneNoteHeight() {
+		if(currentNoteView != null){
+			RelativeLayout layout = (RelativeLayout) currentNoteView.findViewById(R.id.note_open);
+			RelativeLayout.LayoutParams params = (RelativeLayout.LayoutParams) layout.getLayoutParams();
+			Log.d("Height:", Integer.toString(params.height));
+			return params.height;
+		}
+		return 0;
 	}
 	
 	public boolean hasNotes(){
@@ -378,7 +380,10 @@ public class FragmentSlider extends Fragment implements OnClickListener, OnTouch
 			listener.SliderEditField();
 		} else if (v.getId() == R.id.slider_butAddNote) {
 			//Add a new note
-			listNotes.addView(inflateOpenNote(new Note(currentField.getName())), 0);
+			Note newNote = new Note(currentField.getName());
+			notes.add(newNote);
+			listNotes.addView(inflateOpenNote(newNote), 0);
+			//listener.SliderAddNote(); TODO
 		} else if (v.getId() == R.id.slider_butShowElevation) {
 			
 		} else if (v.getId() == R.id.slider_butShowSoilType) {

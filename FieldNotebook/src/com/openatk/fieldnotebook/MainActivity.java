@@ -299,13 +299,20 @@ public class MainActivity extends FragmentActivity implements OnClickListener,
 					}
 
 					// Load field and job data and show edit menu
-					currentField = FindFieldById(curField.getId());
+					Boolean sameField = false;
+					Field newField = FindFieldById(curField.getId());
+					if(currentField != null && currentField.getId() == curField.getId()){
+						sameField = true;
+					}
+					currentField = newField;
 					currentPolygon = curField.getPolygon();
 					this.currentPolygon.select();
 					if (currentField == null) {
 						Log.d("MainActivity - onMapClick", "unable to find field by id");
 					} else {
-						this.SliderRequestData(); //Populate slider again
+						if(sameField == false){
+							this.SliderRequestData(); //Populate slider again
+						}
 					}
 					showSlider(true);
 					break;
@@ -655,6 +662,8 @@ public class MainActivity extends FragmentActivity implements OnClickListener,
 	private void hideSlider(Boolean transition) {
 		if (sliderIsShowing == 1) {
 			sliderIsShowing = 0;
+			if(fragmentSlider != null) fragmentSlider.onClose();
+			
 			FragmentManager fm = getSupportFragmentManager();
 			FragmentSlider fragment = (FragmentSlider) fm.findFragmentByTag("slider");
 			// Set height so transition works TODO 3 different heights?? Get from fragment, fragment.getMyHeight?
@@ -754,20 +763,21 @@ public class MainActivity extends FragmentActivity implements OnClickListener,
 		if(fragmentSlider != null){
 			ScrollView sv = (ScrollView) fragmentSlider.getView().findViewById(R.id.slider_scrollView);
 			RelativeLayout.LayoutParams params = (RelativeLayout.LayoutParams) sv.getLayoutParams();
-			if(sliderPosition == 1){
+			if(sliderPosition == 2 || sliderPosition == 1){
 				//Middle -> Small
+				//OneNote -> Small
 				DropDownAnim an = new DropDownAnim(sv, params.height, 0);
 				an.setDuration(300);
 				sv.startAnimation(an);
 				sliderPosition = 0;
-			} else if(sliderPosition == 2){
+			} else if(sliderPosition == 3){
 				//Fullscreen -> Middle if has notes
 				//Fullscreen -> Small if no notes
 				if(fragmentSlider.hasNotes()){
 					DropDownAnim an = new DropDownAnim(sv, params.height, oneThirdHeight);
 					an.setDuration(300);
 					sv.startAnimation(an);
-					sliderPosition = 1;
+					sliderPosition = 2;
 				} else {
 					DropDownAnim an = new DropDownAnim(sv, params.height, 0);
 					an.setDuration(300);
@@ -794,23 +804,38 @@ public class MainActivity extends FragmentActivity implements OnClickListener,
 			Log.d("layMenu:", Integer.toString(relAdd.getHeight()));
 			ScrollView sv = (ScrollView) fragmentSlider.getView().findViewById(R.id.slider_scrollView);
 			RelativeLayout.LayoutParams params = (RelativeLayout.LayoutParams) sv.getLayoutParams();
-			if(sliderPosition == 0){
+			if(sliderPosition == 0 || sliderPosition == 1){
 				//Small -> Middle
+				//OneNote -> Middle
 				DropDownAnim an = new DropDownAnim(sv, params.height, oneThirdHeight);
 				an.setDuration(300);
 				sv.startAnimation(an);
-				sliderPosition = 1;
-			} else if(sliderPosition == 1){
+				sliderPosition = 2;
+			} else if(sliderPosition == 2){
 				//Middle -> Fullscreen
 				DropDownAnim an = new DropDownAnim(sv, params.height, (size.y - relAdd.getHeight() - actionBarHeight));
 				an.setDuration(300);
 				sv.startAnimation(an);
-				sliderPosition = 2;
+				sliderPosition = 3;
 			}
 			sv.setLayoutParams(params);
 		}
 	}
-	
+	private void SliderOneNote(){
+		if(fragmentSlider != null){
+			RelativeLayout relAdd = (RelativeLayout) fragmentSlider.getView().findViewById(R.id.slider_layMenu);
+			Log.d("layMenu:", Integer.toString(relAdd.getHeight()));
+			ScrollView sv = (ScrollView) fragmentSlider.getView().findViewById(R.id.slider_scrollView);
+			RelativeLayout.LayoutParams params = (RelativeLayout.LayoutParams) sv.getLayoutParams();
+			
+			DropDownAnim an = new DropDownAnim(sv, params.height, fragmentSlider.oneNoteHeight());
+			an.setDuration(300);
+			sv.startAnimation(an);
+			sliderPosition = 1;
+			
+			sv.setLayoutParams(params);
+		}
+	}
 	private MyPolygon saveFieldPolygon = null;
 	private Boolean addingNotePolygon = false;
 	@Override
@@ -832,6 +857,12 @@ public class MainActivity extends FragmentActivity implements OnClickListener,
 		}
 		this.currentPolygon = saveFieldPolygon;
 		saveFieldPolygon = null;
+	}
+	
+	@Override
+	public void SliderAddNote() {
+		// Add Resize to oneNote Size
+		this.SliderOneNote();
 	}
 	
 	@Override
