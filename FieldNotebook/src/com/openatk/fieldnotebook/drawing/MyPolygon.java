@@ -8,6 +8,7 @@ import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
+import android.graphics.Point;
 import android.graphics.Paint.Align;
 import android.graphics.Rect;
 import android.os.Bundle;
@@ -15,6 +16,7 @@ import android.util.Log;
 import android.util.Pair;
 
 import com.google.android.gms.maps.GoogleMap;
+import com.google.android.gms.maps.Projection;
 import com.google.android.gms.maps.model.BitmapDescriptor;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
@@ -51,7 +53,6 @@ public class MyPolygon {
 	private MyPolygonListener listener = null;
 	private Marker textMarker = null;
 	private String textMarkerString = "";
-
 	
 	public interface MyPolygonListener {
 		public void MyPolygonUpdateAcres(Float acres);
@@ -484,5 +485,57 @@ public class MyPolygon {
 	    double lon3 = lon1 + Math.atan2(By, Math.cos(lat1) + Bx);
 	    
 	    return(new LatLng(Math.toDegrees(lat3), Math.toDegrees(lon3)));
+	}
+	
+	public Boolean wasTouched(LatLng point) {
+		//TODO bounding box?
+		if(this.polygon != null){
+			List<LatLng> points = this.polygon.getPoints();
+			// Convert to screen coordinate
+			Projection proj = map.getProjection();
+			Point touchPoint = proj.toScreenLocation(point);
+
+			// Convert boundary to screen coordinate
+			List<Point> boundaryPoints = new ArrayList<Point>();
+			for (int i = 0; i < points.size(); i++) {
+				boundaryPoints.add(proj.toScreenLocation(points.get(i)));
+			}
+
+			// Ray Cast
+			return isPointInPolygon(touchPoint, boundaryPoints);
+		}
+		return false;
+	}
+
+	private boolean isPointInPolygon(Point tap, List<Point> vertices) {
+		int intersectCount = 0;
+		for (int j = 0; j < vertices.size() - 1; j++) {
+			if (rayCastIntersect(tap, vertices.get(j), vertices.get(j + 1))) {
+				intersectCount++;
+			}
+		}
+		return ((intersectCount % 2) == 1); // odd = inside, even = outside;
+	}
+
+	private boolean rayCastIntersect(Point tap, Point vertA, Point vertB) {
+
+		double aY = vertA.y;
+		double bY = vertB.y;
+		double aX = vertA.x;
+		double bX = vertB.x;
+		double pY = tap.y;
+		double pX = tap.x;
+
+		if ((aY > pY && bY > pY) || (aY < pY && bY < pY)
+				|| (aX < pX && bX < pX)) {
+			return false; // a and b can't both be above or below pt.y, and a or
+							// b must be east of pt.x
+		}
+
+		double m = (aY - bY) / (aX - bX); // Rise over run
+		double bee = (-aX) * m + aY; // y = mx + b
+		double x = (pY - bee) / m; // algebra is neat!
+
+		return x > pX;
 	}
 }

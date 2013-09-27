@@ -61,6 +61,7 @@ public class FragmentSlider extends Fragment implements OnClickListener, OnTouch
 	LayoutInflater vi;
 	
 	private Boolean addingPolygon = false;
+	private Boolean addingNote = false;  //Or editing note
 		
 	// Interface for receiving data
 	public interface SliderListener {
@@ -71,6 +72,7 @@ public class FragmentSlider extends Fragment implements OnClickListener, OnTouch
 		public void SliderRequestData();
 		public void  SliderCompletePolygon();
 		public void SliderAddPolygon();
+		public void SliderEditPolygon(MyPolygon poly);
 		public void SliderAddNote();
 	}
 
@@ -144,6 +146,7 @@ public class FragmentSlider extends Fragment implements OnClickListener, OnTouch
 	
 	public void finishPolygon(MyPolygon newPolygon){
 		if(currentNote != null){
+			//TODO handle edit finish? Maybe not, i think i removed on edit?
 			newPolygon.setStrokeColor(Field.STROKE_COLOR);
 			currentNote.addMyPolygon(newPolygon); //Adds a mypolygon
 		}
@@ -183,9 +186,16 @@ public class FragmentSlider extends Fragment implements OnClickListener, OnTouch
 		
 		
 		//Add polygons from note to map
-		List<PolygonOptions> polygons = note.getPolygons(); //Gets map polygons
-		for(int i =0; i<polygons.size(); i++){
-			note.addMyPolygon(new MyPolygon(map, map.addPolygon(polygons.get(i)))); //Adds back my polygons
+		List<MyPolygon> myPolygons = note.getMyPolygons();
+		if(myPolygons.isEmpty()){
+			List<PolygonOptions> polygons = note.getPolygons(); //Gets map polygons
+			for(int i=0; i<polygons.size(); i++){
+				note.addMyPolygon(new MyPolygon(map, map.addPolygon(polygons.get(i)))); //Adds back my polygons
+			}
+		} else {
+			for(int i =0; i<myPolygons.size(); i++){
+				myPolygons.get(i).unselect();
+			}
 		}
 		
 		noteView.me = view;
@@ -197,19 +207,105 @@ public class FragmentSlider extends Fragment implements OnClickListener, OnTouch
 		@Override
 		public void onClick(View v) {
 			NoteView noteView = (NoteView) v.getTag();
-			Note note = noteView.note;
-			if(v.getId() == R.id.note_butEdit){
-				
-			} else if(v.getId() == R.id.note_butShowHide){
+			if(v.getId() == R.id.note_butShowHide){
 				
 			} else if(v.getId() == R.id.note_row1){
 				Log.d("FragmentSlider", "Clicked Note, select it now");
+				currentNote = noteView.note;
+				int index = listNotes.indexOfChild(noteView.me);
 				listNotes.removeView(noteView.me);
+				listNotes.addView(inflateSelectedNote(currentNote), index);
 			}
 		}
 	};
 	
 	static class NoteView
+    {
+		ImageButton butEdit;
+		ImageButton butShowHide;
+		TextView tvComment;
+		TextView tvComment2;
+		ImageView imgPoints;
+		ImageView imgLines;
+		ImageView imgPolygons;
+		RelativeLayout row1;
+		RelativeLayout row2;
+		RelativeLayout layNote;
+		Note note;
+		View me;
+    }
+	
+	private View inflateSelectedNote(Note note){
+		View view = vi.inflate(R.layout.note, null);
+		SelectedNoteView noteView = new SelectedNoteView();
+		noteView.layNote = (RelativeLayout) view.findViewById(R.id.note);
+		noteView.butEdit = (ImageButton) view.findViewById(R.id.note_butEdit);
+		noteView.butShowHide = (ImageButton) view.findViewById(R.id.note_butShowHide);
+		noteView.tvComment = (TextView) view.findViewById(R.id.note_txtComment);
+		noteView.tvComment2 = (TextView) view.findViewById(R.id.note_txtComment2);
+		noteView.imgPoints = (ImageView) view.findViewById(R.id.note_imgPoints);
+		noteView.imgLines = (ImageView) view.findViewById(R.id.note_imgLines);
+		noteView.imgPolygons = (ImageView) view.findViewById(R.id.note_imgPolygons);
+		noteView.row1 = (RelativeLayout) view.findViewById(R.id.note_row1);
+		noteView.row2 = (RelativeLayout) view.findViewById(R.id.note_row2);
+		noteView.note = note;
+		
+		
+		noteView.butEdit.setVisibility(View.VISIBLE);
+		noteView.tvComment.setText(note.getComment());
+		
+		noteView.butEdit.setTag(noteView);
+		noteView.butShowHide.setTag(noteView);
+		noteView.row1.setTag(noteView);
+
+		noteView.butEdit.setOnClickListener(selectedNoteClickListener);
+		noteView.butShowHide.setOnClickListener(selectedNoteClickListener);
+		noteView.row1.setOnClickListener(selectedNoteClickListener);
+		
+		if(note.getVisible() == 1){
+			noteView.butShowHide.setImageResource(R.drawable.note_but_hide);
+		} else {
+			noteView.butShowHide.setImageResource(R.drawable.note_but_show);
+		}
+		
+		
+		//Select all polygons of note on map
+		List<MyPolygon> polygons = note.getMyPolygons(); //Gets map polygons
+		for(int i =0; i<polygons.size(); i++){
+			polygons.get(i).select();
+		}
+		
+		noteView.me = view;
+		view.setTag(noteView);
+		return view;
+	}
+	
+	private OnClickListener selectedNoteClickListener = new OnClickListener(){
+		@Override
+		public void onClick(View v) {
+			SelectedNoteView noteView = (SelectedNoteView) v.getTag();
+			if(v.getId() == R.id.note_butEdit){
+				if(addingNote == false){
+					addingNote = true;
+					//Edit this note
+					currentNote = noteView.note;
+					listNotes.removeView(noteView.me);
+					listNotes.addView(inflateOpenNote(currentNote), 0);
+					svNotes.scrollTo(0, 0);
+				}
+			} else if(v.getId() == R.id.note_butShowHide){
+				
+			} else if(v.getId() == R.id.note_row1){
+				Log.d("FragmentSlider", "Clicked Note, close it");
+				currentNote = null;
+				int index = listNotes.indexOfChild(noteView.me);
+				listNotes.removeView(noteView.me);
+				listNotes.addView(inflateNote(noteView.note), index);
+			}
+		}
+	};
+	
+	static class SelectedNoteView
     {
 		ImageButton butEdit;
 		ImageButton butShowHide;
@@ -305,6 +401,8 @@ public class FragmentSlider extends Fragment implements OnClickListener, OnTouch
     }
 	
 	private void SaveNote(Note note){
+		addingNote = false;
+		
 		SQLiteDatabase database = dbHelper.getWritableDatabase();
 		ContentValues values = new ContentValues();
 		values.put(TableNotes.COL_COMMENT,note.getComment());
@@ -328,6 +426,30 @@ public class FragmentSlider extends Fragment implements OnClickListener, OnTouch
 		database.close();
 		dbHelper.close();
 	}
+	
+	public void onMapClick(LatLng position){
+		Log.d("Here", "FragmentSlider - onMapClick");
+		//Check if clicked on any of current notes objects
+		if(this.currentNote != null){
+			//Loop through current notes polygons checking if touched
+			List<MyPolygon> polys = this.currentNote.getMyPolygons();
+			MyPolygon touchedPoly = null;
+			for(int i=0; i<polys.size(); i++){
+				if(polys.get(i).wasTouched(position)){
+					touchedPoly = polys.get(i);
+					break;
+				}
+			}
+			if(touchedPoly != null){
+				touchedPoly.edit();
+				//Shouldn't recieve touch if already adding so this is fine
+				this.currentNote.removePolygon(touchedPoly);
+				listener.SliderEditPolygon(touchedPoly);
+				addingPolygon = true;
+			}
+		}
+	}
+	
 
 	@Override
 	public void onAttach(Activity activity) {
@@ -379,18 +501,20 @@ public class FragmentSlider extends Fragment implements OnClickListener, OnTouch
 		if (v.getId() == R.id.slider_butEditField) {
 			listener.SliderEditField();
 		} else if (v.getId() == R.id.slider_butAddNote) {
-			//Add a new note
-			Note newNote = new Note(currentField.getName());
-			notes.add(newNote);
-			listNotes.addView(inflateOpenNote(newNote), 0);
-			//listener.SliderAddNote(); TODO
+			if(addingNote == false){
+				this.addingNote = true;
+				//Add a new note
+				Note newNote = new Note(currentField.getName());
+				notes.add(newNote);
+				listNotes.addView(inflateOpenNote(newNote), 0);
+				//listener.SliderAddNote(); TODO
+			}
 		} else if (v.getId() == R.id.slider_butShowElevation) {
 			
 		} else if (v.getId() == R.id.slider_butShowSoilType) {
 			
 		}
 	}
-	
 	
 	@Override
 	public boolean onTouch(View v, MotionEvent event) {
@@ -415,6 +539,10 @@ public class FragmentSlider extends Fragment implements OnClickListener, OnTouch
             }
         }
         return true;
+	}
+	
+	public boolean isAddingNote(){
+		return this.addingNote;
 	}
 
 }

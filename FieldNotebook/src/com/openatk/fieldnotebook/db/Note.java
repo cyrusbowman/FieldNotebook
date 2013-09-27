@@ -64,7 +64,9 @@ public class Note {
 			myPolygons.get(i).remove();
 		}
 	}
-	
+	public void removePolygon(MyPolygon poly){
+		myPolygons.remove(poly);
+	}
 	public Integer getId() {
 		return id;
 	}
@@ -110,6 +112,9 @@ public class Note {
 			}
 		}
 		return polygons;
+	}
+	public List<MyPolygon> getMyPolygons() {
+		return this.myPolygons;
 	}
 	public Integer getColor() {
 		return color;

@@ -277,9 +277,20 @@ public class MainActivity extends FragmentActivity implements OnClickListener,
 	@Override
 	public void onMapClick(LatLng position) {
 		if (addIsShowing == 1 || addingNotePolygon) {
+			Log.d("HERE", "Here1");
 			// Add points to polygon
 			this.currentPolygon.addPoint(position);
+		} else if(this.fragmentSlider != null && this.fragmentSlider.isAddingNote() == true) {
+			Log.d("HERE", "Here2");
+
+			//Adding a note, give the note the click events
+			this.fragmentSlider.onMapClick(position);
 		} else {
+			Log.d("HERE", "Here3");
+			if(this.fragmentSlider == null){
+				Log.d("HERE", "Here null");
+			}
+
 			// Map view
 			if(fragmentSlider != null){
 				//fragmentSlider.flushChangesAndSave(false); //Save changes to all open notes
@@ -847,6 +858,14 @@ public class MainActivity extends FragmentActivity implements OnClickListener,
 	}
 	
 	@Override
+	public void SliderEditPolygon(MyPolygon poly) {
+		// Add note polygon
+		addingNotePolygon = true;
+		saveFieldPolygon = this.currentPolygon;
+		this.currentPolygon = poly;
+	}
+	
+	@Override
 	public void SliderCompletePolygon(){
 		addingNotePolygon = false;
 		this.currentPolygon.complete();
@@ -1220,12 +1239,14 @@ public class MainActivity extends FragmentActivity implements OnClickListener,
 
 	@Override
 	public boolean onMarkerClick(Marker arg0) {
-		Boolean found = false;
-		if (this.currentPolygon != null) {
-			found = this.currentPolygon.onMarkerClick(arg0);
-		}
-		if(found == false){
-			this.onMapClick(arg0.getPosition());
+		if(this.fragmentSlider == null || this.fragmentSlider.isAddingNote() == false){
+			Boolean found = false;
+			if (this.currentPolygon != null) {
+				found = this.currentPolygon.onMarkerClick(arg0);
+			}
+			if(found == false){
+				this.onMapClick(arg0.getPosition());
+			}
 		}
 		return false;
 	}
