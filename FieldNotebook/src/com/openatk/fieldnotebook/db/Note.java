@@ -100,6 +100,7 @@ public class Note {
 				polygonOptions.fillColor(Field.FILL_COLOR_NOT_PLANNED);
 				polygonOptions.strokeWidth(Field.STROKE_WIDTH);
 				polygonOptions.strokeColor(Field.STROKE_COLOR);
+				polygonOptions.zIndex(1.0f);
 				
 				String boundary = tokensBoundarys.nextToken();
 				StringTokenizer tokensPoints = new StringTokenizer(boundary, ",");
