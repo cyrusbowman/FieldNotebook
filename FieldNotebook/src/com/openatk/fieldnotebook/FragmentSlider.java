@@ -210,11 +210,20 @@ public class FragmentSlider extends Fragment implements OnClickListener, OnTouch
 			if(v.getId() == R.id.note_butShowHide){
 				
 			} else if(v.getId() == R.id.note_row1){
-				Log.d("FragmentSlider", "Clicked Note, select it now");
+				if(addingNote == false){
+					addingNote = true;
+					//Edit this note
+					currentNote = noteView.note;
+					listNotes.removeView(noteView.me);
+					listNotes.addView(inflateOpenNote(currentNote), 0);
+					svNotes.scrollTo(0, 0);
+				}
+				
+				/*Log.d("FragmentSlider", "Clicked Note, select it now");
 				currentNote = noteView.note;
 				int index = listNotes.indexOfChild(noteView.me);
 				listNotes.removeView(noteView.me);
-				listNotes.addView(inflateSelectedNote(currentNote), index);
+				listNotes.addView(inflateSelectedNote(currentNote), index);*/
 			}
 		}
 	};
@@ -365,9 +374,11 @@ public class FragmentSlider extends Fragment implements OnClickListener, OnTouch
 				
 			} else if(v.getId() == R.id.note_open_butPolygon){
 				if(addingPolygon == false){
+					noteView.butPolygon.setImageResource(R.drawable.close_polygon);
 					listener.SliderAddPolygon();
 					addingPolygon = true;
 				} else {
+					noteView.butPolygon.setImageResource(R.drawable.add_polygon);
 					listener.SliderCompletePolygon();
 					addingPolygon = false;
 				}

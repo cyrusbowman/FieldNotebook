@@ -24,6 +24,7 @@
 			        android:layout_width="80dp"
 			        android:layout_height="80dp"
 			        android:layout_centerInParent="true"
+			        android:src="@drawable/add_point_v1"
 			        />
 	        </RelativeLayout>
 		   <RelativeLayout
@@ -35,6 +36,7 @@
 			        android:layout_width="80dp"
 			        android:layout_height="80dp"
 					android:layout_centerInParent="true"
+					android:src="@drawable/add_line_v1"
 		           	/>
 			</RelativeLayout>
 			<RelativeLayout
@@ -46,6 +48,7 @@
 			        android:layout_width="80dp"
 			        android:layout_height="80dp"
 			        android:layout_centerInParent="true"
+			        android:src="@drawable/add_polygon"
 		           	/>
 			</RelativeLayout>
 			<RelativeLayout
@@ -57,6 +60,7 @@
 			        android:layout_width="80dp"
 			        android:layout_height="80dp"
 			        android:layout_centerInParent="true"
+			        android:src="@drawable/select_color"
 		           	/>
 			</RelativeLayout>
 		</LinearLayout>
@@ -73,6 +77,7 @@
 	        android:layout_height="50dp"
 	        android:layout_alignParentLeft="true"
 	        android:layout_alignParentTop="true"
+	        android:src="@drawable/done"
            	/>
 	    <ImageButton 
             android:id="@+id/note_open_butDelete"
