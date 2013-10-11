@@ -118,7 +118,8 @@
 	    </RelativeLayout>
     </RelativeLayout>
     
-    <ScrollView
+    <view
+        class="com.openatk.fieldnotebook.ScrollAutoView"
         android:id="@+id/slider_scrollView"
 	    android:layout_width="match_parent"
 	    android:layout_height="0dp"
@@ -130,6 +131,6 @@
 		    android:layout_height="match_parent"
 		    android:layout_alignParentTop="true"
 		    android:orientation="vertical"/>   
-    </ScrollView>
+    </view>
     
 </RelativeLayout>

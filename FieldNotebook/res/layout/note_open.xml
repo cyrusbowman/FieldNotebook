@@ -98,6 +98,7 @@
 			android:textSize="16sp"
 			android:hint="Comment"
 			android:textColor="#000"
+			android:inputType="text"
 			/>
    </RelativeLayout>
     

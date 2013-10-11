@@ -1,6 +1,5 @@
 package com.openatk.fieldnotebook;
 
-import java.util.Date;
 import java.util.List;
 
 import com.google.android.gms.maps.GoogleMap;
@@ -9,7 +8,6 @@ import com.google.android.gms.maps.model.PolygonOptions;
 import com.openatk.fieldnotebook.db.DatabaseHelper;
 import com.openatk.fieldnotebook.db.Field;
 import com.openatk.fieldnotebook.db.Note;
-import com.openatk.fieldnotebook.db.TableFields;
 import com.openatk.fieldnotebook.db.TableNotes;
 import com.openatk.fieldnotebook.drawing.MyPolygon;
 
@@ -20,21 +18,23 @@ import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.util.Log;
+import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.View.OnTouchListener;
 import android.view.ViewGroup;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
-import android.widget.RelativeLayout.LayoutParams;
 import android.widget.ScrollView;
 import android.widget.TextView;
+import android.widget.TextView.OnEditorActionListener;
 
 public class FragmentSlider extends Fragment implements OnClickListener, OnTouchListener {
 
@@ -47,7 +47,7 @@ public class FragmentSlider extends Fragment implements OnClickListener, OnTouch
 	private Button butShowElevation;
 	private Button butShowSoilType;
 	private Button butAddNote;
-	private ScrollView svNotes;
+	private ScrollAutoView svNotes;
 	private LinearLayout listNotes;
 	
 	private SliderListener listener;
@@ -94,8 +94,11 @@ public class FragmentSlider extends Fragment implements OnClickListener, OnTouch
 		butShowSoilType = (Button) view.findViewById(R.id.slider_butShowSoilType);
 		butAddNote = (Button) view.findViewById(R.id.slider_butAddNote);
 
-		svNotes = (ScrollView) view.findViewById(R.id.slider_scrollView);
+		svNotes = (ScrollAutoView) view.findViewById(R.id.slider_scrollView);
 		listNotes = (LinearLayout) view.findViewById(R.id.slider_listNotes);
+		
+		svNotes.setOverScrollMode(ScrollView.OVER_SCROLL_NEVER); //Visual bottom of scroll effect
+
 		
 		butEditField.setOnClickListener(this);
 		butShowElevation.setOnClickListener(this);
@@ -104,10 +107,10 @@ public class FragmentSlider extends Fragment implements OnClickListener, OnTouch
 		
 		dbHelper = new DatabaseHelper(this.getActivity());
 		vi = (LayoutInflater) this.getActivity().getApplicationContext().getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-		
+				
 		return view;
 	}
-
+	
 	@Override
 	public void onActivityCreated(Bundle savedInstanceState) {
 		super.onActivityCreated(savedInstanceState);
@@ -212,18 +215,24 @@ public class FragmentSlider extends Fragment implements OnClickListener, OnTouch
 			} else if(v.getId() == R.id.note_row1){
 				if(addingNote == false){
 					addingNote = true;
+					
+					
+					svNotes.scrollToAfterAdd(noteView.me.getTop());
 					//Edit this note
+					int index = listNotes.indexOfChild(noteView.me);
 					currentNote = noteView.note;
 					listNotes.removeView(noteView.me);
-					listNotes.addView(inflateOpenNote(currentNote), 0);
-					svNotes.scrollTo(0, 0);
+					View newView = inflateOpenNote(currentNote);
+					listNotes.addView(newView, index);
+					OpenNoteView noteNoteView = (OpenNoteView) newView.getTag();
+					
+					Log.d("Current Scroll:", Float.toString(svNotes.getScrollY()));
+					Log.d("v Top:", Integer.toString(v.getTop()));
+					Log.d("v Bottom:", Integer.toString(v.getBottom()));
+					Log.d("me Top:", Integer.toString(newView.getTop()));
+					Log.d("me Bottom:", Integer.toString(newView.getBottom()));
+
 				}
-				
-				/*Log.d("FragmentSlider", "Clicked Note, select it now");
-				currentNote = noteView.note;
-				int index = listNotes.indexOfChild(noteView.me);
-				listNotes.removeView(noteView.me);
-				listNotes.addView(inflateSelectedNote(currentNote), index);*/
 			}
 		}
 	};
@@ -244,95 +253,10 @@ public class FragmentSlider extends Fragment implements OnClickListener, OnTouch
 		View me;
     }
 	
-	private View inflateSelectedNote(Note note){
-		View view = vi.inflate(R.layout.note, null);
-		SelectedNoteView noteView = new SelectedNoteView();
-		noteView.layNote = (RelativeLayout) view.findViewById(R.id.note);
-		noteView.butEdit = (ImageButton) view.findViewById(R.id.note_butEdit);
-		noteView.butShowHide = (ImageButton) view.findViewById(R.id.note_butShowHide);
-		noteView.tvComment = (TextView) view.findViewById(R.id.note_txtComment);
-		noteView.tvComment2 = (TextView) view.findViewById(R.id.note_txtComment2);
-		noteView.imgPoints = (ImageView) view.findViewById(R.id.note_imgPoints);
-		noteView.imgLines = (ImageView) view.findViewById(R.id.note_imgLines);
-		noteView.imgPolygons = (ImageView) view.findViewById(R.id.note_imgPolygons);
-		noteView.row1 = (RelativeLayout) view.findViewById(R.id.note_row1);
-		noteView.row2 = (RelativeLayout) view.findViewById(R.id.note_row2);
-		noteView.note = note;
-		
-		
-		noteView.butEdit.setVisibility(View.VISIBLE);
-		noteView.tvComment.setText(note.getComment());
-		
-		noteView.butEdit.setTag(noteView);
-		noteView.butShowHide.setTag(noteView);
-		noteView.row1.setTag(noteView);
-
-		noteView.butEdit.setOnClickListener(selectedNoteClickListener);
-		noteView.butShowHide.setOnClickListener(selectedNoteClickListener);
-		noteView.row1.setOnClickListener(selectedNoteClickListener);
-		
-		if(note.getVisible() == 1){
-			noteView.butShowHide.setImageResource(R.drawable.note_but_hide);
-		} else {
-			noteView.butShowHide.setImageResource(R.drawable.note_but_show);
-		}
-		
-		
-		//Select all polygons of note on map
-		List<MyPolygon> polygons = note.getMyPolygons(); //Gets map polygons
-		for(int i =0; i<polygons.size(); i++){
-			polygons.get(i).select();
-		}
-		
-		noteView.me = view;
-		view.setTag(noteView);
-		return view;
-	}
-	
-	private OnClickListener selectedNoteClickListener = new OnClickListener(){
-		@Override
-		public void onClick(View v) {
-			SelectedNoteView noteView = (SelectedNoteView) v.getTag();
-			if(v.getId() == R.id.note_butEdit){
-				if(addingNote == false){
-					addingNote = true;
-					//Edit this note
-					currentNote = noteView.note;
-					listNotes.removeView(noteView.me);
-					listNotes.addView(inflateOpenNote(currentNote), 0);
-					svNotes.scrollTo(0, 0);
-				}
-			} else if(v.getId() == R.id.note_butShowHide){
-				
-			} else if(v.getId() == R.id.note_row1){
-				Log.d("FragmentSlider", "Clicked Note, close it");
-				currentNote = null;
-				int index = listNotes.indexOfChild(noteView.me);
-				listNotes.removeView(noteView.me);
-				listNotes.addView(inflateNote(noteView.note), index);
-			}
-		}
-	};
-	
-	static class SelectedNoteView
-    {
-		ImageButton butEdit;
-		ImageButton butShowHide;
-		TextView tvComment;
-		TextView tvComment2;
-		ImageView imgPoints;
-		ImageView imgLines;
-		ImageView imgPolygons;
-		RelativeLayout row1;
-		RelativeLayout row2;
-		RelativeLayout layNote;
-		Note note;
-		View me;
-    }
 	
 	private View inflateOpenNote(Note note){
 		View view = vi.inflate(R.layout.note_open, null);
-		OpenNoteView noteView = new OpenNoteView();
+		final OpenNoteView noteView = new OpenNoteView();
 		noteView.layNote = (RelativeLayout) view.findViewById(R.id.note_open);
 		noteView.butPoint = (ImageButton) view.findViewById(R.id.note_open_butPoint);
 		noteView.butLine = (ImageButton) view.findViewById(R.id.note_open_butLine);
@@ -345,6 +269,21 @@ public class FragmentSlider extends Fragment implements OnClickListener, OnTouch
 		noteView.note = note;
 		
 		noteView.etComment.setText(note.getComment());
+		noteView.etComment.setImeActionLabel("Done", KeyEvent.KEYCODE_ENTER);
+		noteView.etComment.setOnEditorActionListener(new OnEditorActionListener() {
+		    @Override
+		    public boolean onEditorAction(TextView v, int keyCode, KeyEvent event) {
+		        if (event != null && (event.getAction() == KeyEvent.ACTION_DOWN) &&  (event.getKeyCode() == KeyEvent.KEYCODE_ENTER))
+		        {               
+		           // hide virtual keyboard
+		           InputMethodManager imm =  (InputMethodManager)getActivity().getApplicationContext().getSystemService(Context.INPUT_METHOD_SERVICE);
+		           imm.hideSoftInputFromWindow(noteView.etComment.getWindowToken(), 0);
+		           return true;
+		        }
+		        return false;
+		    }
+		});
+		
 		noteView.butPoint.setTag(noteView);
 		noteView.butLine.setTag(noteView);
 		noteView.butPolygon.setTag(noteView);
@@ -517,8 +456,15 @@ public class FragmentSlider extends Fragment implements OnClickListener, OnTouch
 				//Add a new note
 				Note newNote = new Note(currentField.getName());
 				notes.add(newNote);
-				listNotes.addView(inflateOpenNote(newNote), 0);
-				//listener.SliderAddNote(); TODO
+				
+				View newView = inflateOpenNote(newNote);
+				OpenNoteView newOpenNote = (OpenNoteView) newView.getTag();
+				listNotes.addView(newView, 0);
+				listener.SliderAddNote();
+				
+				svNotes.scrollTo(0, 0);
+				//InputMethodManager inputMethodManager = (InputMethodManager) this.getActivity().getSystemService(Context.INPUT_METHOD_SERVICE);
+				//inputMethodManager.showSoftInput(newOpenNote.etComment, 0);
 			}
 		} else if (v.getId() == R.id.slider_butShowElevation) {
 			
