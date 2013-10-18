@@ -11,7 +11,6 @@ import android.graphics.Paint;
 import android.graphics.Point;
 import android.graphics.Paint.Align;
 import android.graphics.Rect;
-import android.os.Bundle;
 import android.util.Log;
 import android.util.Pair;
 

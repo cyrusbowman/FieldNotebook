@@ -2,11 +2,8 @@ package com.openatk.fieldnotebook;
 
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.Iterator;
 import java.util.List;
-import java.util.concurrent.Callable;
 
-import android.app.ActionBar;
 import android.app.AlertDialog;
 import android.content.BroadcastReceiver;
 import android.content.ContentValues;
@@ -1260,7 +1257,7 @@ public class MainActivity extends FragmentActivity implements OnClickListener,
 				this.onMapClick(arg0.getPosition());
 			}
 		}
-		return false;
+		return true;
 	}
 
 	@Override

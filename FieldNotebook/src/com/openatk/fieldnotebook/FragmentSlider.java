@@ -3,13 +3,18 @@ package com.openatk.fieldnotebook;
 import java.util.List;
 
 import com.google.android.gms.maps.GoogleMap;
+import com.google.android.gms.maps.GoogleMap.OnMapClickListener;
+import com.google.android.gms.maps.GoogleMap.OnMarkerClickListener;
+import com.google.android.gms.maps.GoogleMap.OnMarkerDragListener;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.PolygonOptions;
+import com.google.android.gms.maps.model.PolylineOptions;
 import com.openatk.fieldnotebook.db.DatabaseHelper;
 import com.openatk.fieldnotebook.db.Field;
 import com.openatk.fieldnotebook.db.Note;
 import com.openatk.fieldnotebook.db.TableNotes;
 import com.openatk.fieldnotebook.drawing.MyPolygon;
+import com.openatk.fieldnotebook.drawing.MyPolyline;
 
 import android.app.Activity;
 import android.content.ContentValues;
@@ -56,12 +61,16 @@ public class FragmentSlider extends Fragment implements OnClickListener, OnTouch
 	
 	private DatabaseHelper dbHelper;
 	private Note currentNote = null;
+	OpenNoteView currentOpenNoteView = null;
 	private RelativeLayout currentNoteView = null;
 	
 	LayoutInflater vi;
 	
 	private Boolean addingPolygon = false;
+	private Boolean addingPolyline = false;
 	private Boolean addingNote = false;  //Or editing note
+	
+	private MyPolyline currentPolyline = null;
 		
 	// Interface for receiving data
 	public interface SliderListener {
@@ -170,7 +179,6 @@ public class FragmentSlider extends Fragment implements OnClickListener, OnTouch
 		noteView.row2 = (RelativeLayout) view.findViewById(R.id.note_row2);
 		noteView.note = note;
 		
-		
 		noteView.tvComment.setText(note.getComment());
 		
 		noteView.butEdit.setTag(noteView);
@@ -200,6 +208,18 @@ public class FragmentSlider extends Fragment implements OnClickListener, OnTouch
 				myPolygons.get(i).unselect();
 			}
 		}
+		//Add polylines from note to map
+		List<MyPolyline> myPolylines = note.getMyPolylines();
+		if(myPolylines.isEmpty()){
+			List<PolylineOptions> polylines = note.getPolylines(); //Gets map polygons
+			for(int i=0; i<polylines.size(); i++){
+				note.addMyPolyline(new MyPolyline(map.addPolyline(polylines.get(i)), map)); //Adds back my polygons
+			}
+		} else {
+			for(int i =0; i<myPolylines.size(); i++){
+				myPolylines.get(i).unselect();
+			}
+		}
 		
 		noteView.me = view;
 		view.setTag(noteView);
@@ -224,14 +244,12 @@ public class FragmentSlider extends Fragment implements OnClickListener, OnTouch
 					listNotes.removeView(noteView.me);
 					View newView = inflateOpenNote(currentNote);
 					listNotes.addView(newView, index);
-					OpenNoteView noteNoteView = (OpenNoteView) newView.getTag();
-					
+					currentOpenNoteView = (OpenNoteView) newView.getTag();
 					Log.d("Current Scroll:", Float.toString(svNotes.getScrollY()));
 					Log.d("v Top:", Integer.toString(v.getTop()));
 					Log.d("v Bottom:", Integer.toString(v.getBottom()));
 					Log.d("me Top:", Integer.toString(newView.getTop()));
 					Log.d("me Bottom:", Integer.toString(newView.getBottom()));
-
 				}
 			}
 		}
@@ -310,7 +328,25 @@ public class FragmentSlider extends Fragment implements OnClickListener, OnTouch
 			if(v.getId() == R.id.note_open_butPoint){
 				
 			} else if(v.getId() == R.id.note_open_butLine){
-				
+				if(addingPolyline == false){
+					currentPolyline = new MyPolyline(map);
+					currentPolyline.edit();
+					noteView.butLine.setImageResource(R.drawable.close_line_v1);
+					addingPolyline = true;
+				} else {
+					if(currentPolyline != null) currentPolyline.complete();
+					map.setOnMapClickListener((OnMapClickListener) listener);
+					map.setOnMarkerClickListener((OnMarkerClickListener) listener);
+					map.setOnMarkerDragListener((OnMarkerDragListener) listener);
+					
+					if(currentNote != null){
+						//TODO handle edit finish? Maybe not, i think i removed on edit?
+						currentPolyline.setColor(Field.STROKE_COLOR);
+						currentNote.addMyPolyline(currentPolyline); //Adds a myPolyline
+					}
+					noteView.butLine.setImageResource(R.drawable.add_line_v1);
+					addingPolyline = false;
+				}
 			} else if(v.getId() == R.id.note_open_butPolygon){
 				if(addingPolygon == false){
 					noteView.butPolygon.setImageResource(R.drawable.close_polygon);
@@ -324,6 +360,27 @@ public class FragmentSlider extends Fragment implements OnClickListener, OnTouch
 			} else if(v.getId() == R.id.note_open_butColor){
 				
 			} else if(v.getId() == R.id.note_open_butDone){
+				if(addingPolygon){
+					noteView.butPolygon.setImageResource(R.drawable.add_polygon);
+					listener.SliderCompletePolygon();
+					addingPolygon = false;
+				}
+				
+				if(addingPolyline){
+					if(currentPolyline != null) currentPolyline.complete();
+					map.setOnMapClickListener((OnMapClickListener) listener);
+					map.setOnMarkerClickListener((OnMarkerClickListener) listener);
+					map.setOnMarkerDragListener((OnMarkerDragListener) listener);
+					
+					if(currentNote != null){
+						//TODO handle edit finish? Maybe not, i think i removed on edit?
+						currentPolyline.setColor(Field.STROKE_COLOR);
+						currentNote.addMyPolyline(currentPolyline); //Adds a myPolyline
+					}
+					noteView.butLine.setImageResource(R.drawable.add_line_v1);
+					addingPolygon = false;
+				}
+				
 				//Save the note
 				currentNote.setComment(noteView.etComment.getText().toString());
 				SaveNote(currentNote);
@@ -363,6 +420,12 @@ public class FragmentSlider extends Fragment implements OnClickListener, OnTouch
 		//Save the polygons
 		values.put(TableNotes.COL_POLYGONS, note.getStrPolygons());
 		Log.d("SaveNote", "StrPolygons:" + note.getStrPolygons());
+		//Save current my polylines to strpolylines
+		note.myPolylinesToStringPolylines();
+		//Save the polylines
+		values.put(TableNotes.COL_LINES, note.getStrPolylines());
+		Log.d("SaveNote", "StrPolylines:" + note.getStrPolylines());
+		
 		
 		//TODO more stuff
 		if(note.getId() == null){
@@ -392,6 +455,9 @@ public class FragmentSlider extends Fragment implements OnClickListener, OnTouch
 			}
 			if(touchedPoly != null){
 				touchedPoly.edit();
+				if(this.currentOpenNoteView != null){
+					this.currentOpenNoteView.butPolygon.setImageResource(R.drawable.close_polygon);
+				}
 				//Shouldn't recieve touch if already adding so this is fine
 				this.currentNote.removePolygon(touchedPoly);
 				listener.SliderEditPolygon(touchedPoly);
@@ -419,6 +485,7 @@ public class FragmentSlider extends Fragment implements OnClickListener, OnTouch
 		if(notes != null){
 			for(int i=0; i<notes.size(); i++){
 				notes.get(i).removePolygons();
+				notes.get(i).removePolylines();
 			}
 		}
 	}
@@ -458,7 +525,7 @@ public class FragmentSlider extends Fragment implements OnClickListener, OnTouch
 				notes.add(newNote);
 				
 				View newView = inflateOpenNote(newNote);
-				OpenNoteView newOpenNote = (OpenNoteView) newView.getTag();
+				currentOpenNoteView = (OpenNoteView) newView.getTag();
 				listNotes.addView(newView, 0);
 				listener.SliderAddNote();
 				
