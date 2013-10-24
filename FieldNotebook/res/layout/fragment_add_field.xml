@@ -15,13 +15,14 @@
             android:layout_width="0dp" 
             android:layout_height="wrap_content" 
             android:layout_weight="20" /> 
-		<EditText 
-		        android:id="@+id/add_field_name"
-		        android:layout_width="0dp"
-		        android:layout_height="48dp"
-		        android:hint="Field Name"
-		        android:layout_weight="60"
-		        />
+
+		<EditText
+		    android:id="@+id/add_field_name"
+		    android:layout_width="0dp"
+		    android:layout_height="48dp"
+		    android:layout_weight="60"
+		    android:hint="Case Name" />
+
 		<Space 
             android:layout_width="0dp" 
             android:layout_height="wrap_content" 

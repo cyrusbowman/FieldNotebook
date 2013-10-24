@@ -7,11 +7,13 @@ import com.google.android.gms.maps.GoogleMap.OnMapClickListener;
 import com.google.android.gms.maps.GoogleMap.OnMarkerClickListener;
 import com.google.android.gms.maps.GoogleMap.OnMarkerDragListener;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.LatLngBounds;
 import com.google.android.gms.maps.model.PolygonOptions;
 import com.google.android.gms.maps.model.PolylineOptions;
 import com.openatk.fieldnotebook.db.DatabaseHelper;
 import com.openatk.fieldnotebook.db.Field;
 import com.openatk.fieldnotebook.db.Note;
+import com.openatk.fieldnotebook.db.TableFields;
 import com.openatk.fieldnotebook.db.TableNotes;
 import com.openatk.fieldnotebook.drawing.MyPolygon;
 import com.openatk.fieldnotebook.drawing.MyPolyline;
@@ -426,6 +428,38 @@ public class FragmentSlider extends Fragment implements OnClickListener, OnTouch
 		values.put(TableNotes.COL_LINES, note.getStrPolylines());
 		Log.d("SaveNote", "StrPolylines:" + note.getStrPolylines());
 		
+		//add here
+		
+		List<MyPolygon> listPolygons = note.getMyPolygons();
+		LatLngBounds.Builder builder = new LatLngBounds.Builder();
+		for(int i = 0;i<listPolygons.size();i++){
+			List<LatLng> points = listPolygons.get(i).getPoints();
+			for(int j=0;j<points.size();j++){
+				builder.include(points.get(j));
+			}
+		}
+		
+		List<MyPolyline> listPolyline = note.getMyPolylines();
+		
+		for(int p=0;p<listPolyline.size();p++){
+			List<LatLng> points = listPolyline.get(p).getPoints();
+			for(int u = 0;u<points.size();u++){
+				builder.include(points.get(u));
+			}
+		}
+		
+		LatLngBounds bounds = builder.build();
+		LatLng northeast = bounds.northeast;
+		LatLng southwest = bounds.southwest;
+		
+		String newFieldBoundary = "'" + Double.toString(southwest.latitude) + "," + Double.toString(southwest.longitude) + ","+ Double.toString(southwest.latitude)+"," + Double.toString(northeast.longitude)+ "," + Double.toString(northeast.latitude)+","+ Double.toString(northeast.longitude)+ ","+Double.toString(northeast.latitude)+","+Double.toString(southwest.longitude) + "'";//and so on
+		//newFieldBoundary should look like this: "Lat,Lng,Lat,Lng,Lat,Lng,Lat,Lng"
+		ContentValues valuesField = new ContentValues();
+		valuesField.put(TableFields.COL_BOUNDARY, newFieldBoundary);
+		
+		String whereField = TableFields.COL_NAME + "= '" + note.getFieldName() + "'";
+		database.update(TableFields.TABLE_NAME, values, whereField, null);
+		database.update(TableFields.TABLE_NAME, valuesField, whereField, null);
 		
 		//TODO more stuff
 		if(note.getId() == null){
