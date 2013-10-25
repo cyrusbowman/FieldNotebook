@@ -2,11 +2,8 @@ package com.openatk.fieldnotebook;
 
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.Iterator;
 import java.util.List;
-import java.util.concurrent.Callable;
 
-import android.app.ActionBar;
 import android.app.AlertDialog;
 import android.content.BroadcastReceiver;
 import android.content.ContentValues;
@@ -39,6 +36,7 @@ import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.animation.Animation;
 import android.view.animation.Transformation;
+import android.view.inputmethod.InputMethodManager;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.AdapterView;
@@ -847,6 +845,17 @@ public class MainActivity extends FragmentActivity implements OnClickListener,
 			sv.setLayoutParams(params);
 		}
 	}
+	private void SliderSizeMiddle(){
+		if(fragmentSlider != null){
+			if(sliderPosition == 3){
+				this.SliderShrink();
+			} else if(sliderPosition == 0){
+				this.SliderGrow();
+			}
+		}
+	}
+	
+	
 	private MyPolygon saveFieldPolygon = null;
 	private Boolean addingNotePolygon = false;
 	@Override
@@ -881,7 +890,7 @@ public class MainActivity extends FragmentActivity implements OnClickListener,
 	@Override
 	public void SliderAddNote() {
 		// Add Resize to oneNote Size
-		this.SliderOneNote();
+		this.SliderSizeMiddle();
 	}
 	
 	@Override
@@ -1248,7 +1257,7 @@ public class MainActivity extends FragmentActivity implements OnClickListener,
 				this.onMapClick(arg0.getPosition());
 			}
 		}
-		return false;
+		return true;
 	}
 
 	@Override
