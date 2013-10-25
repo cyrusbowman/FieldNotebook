@@ -63,6 +63,18 @@
 			        android:src="@drawable/select_color"
 		           	/>
 			</RelativeLayout>
+			<RelativeLayout
+	            android:layout_width="wrap_content"
+	        	android:layout_height="wrap_content"
+	        	android:layout_weight="1">
+			    <ImageButton 
+		            android:id="@+id/note_open_butPicture"
+			        android:layout_width="80dp"
+			        android:layout_height="80dp"
+			        android:layout_centerInParent="true"
+			        android:src="@drawable/select_color"
+		           	/>
+			</RelativeLayout>
 		</LinearLayout>
    </RelativeLayout>
    <RelativeLayout

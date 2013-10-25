@@ -193,6 +193,7 @@ public class MyPolyline implements OnMapClickListener, OnMarkerDragListener, OnM
 				PolylineOptions lineOptions = new PolylineOptions();
 				lineOptions.color(STROKE_COLOR);
 				lineOptions.width(STROKE_WIDTH);
+				lineOptions.zIndex(2.0f);
 				for (int i = 0; i < arrayLoc.size(); i++) {
 					lineOptions.add(arrayLoc.get(i));
 				}

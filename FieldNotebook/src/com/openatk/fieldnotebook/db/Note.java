@@ -6,10 +6,13 @@ import java.util.StringTokenizer;
 
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
+import android.graphics.Color;
 
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.PolygonOptions;
 import com.google.android.gms.maps.model.PolylineOptions;
+import com.openatk.fieldnotebook.drawing.MyMarker;
 import com.openatk.fieldnotebook.drawing.MyPolygon;
 import com.openatk.fieldnotebook.drawing.MyPolyline;
 
@@ -28,6 +31,10 @@ public class Note {
 	private String strPolylines = null;
 	private List<MyPolyline> myPolylines = new ArrayList<MyPolyline>();
 	private List<PolylineOptions> polylines = null;
+	
+	private String strMarkers = null;
+	private List<MyMarker> myMarkers = new ArrayList<MyMarker>();
+	
 	
 	//private List<MyLine> lines;
 	//private List<MyPoint> points;
@@ -108,6 +115,33 @@ public class Note {
 	}
 	public void removePolyline(MyPolyline poly){
 		myPolylines.remove(poly);
+	}
+	
+	public void addMyMarker(MyMarker marker){
+		this.myMarkers.add(marker);
+	}
+	public void myMarkersToStringMarkers(){
+		StringBuilder build = new StringBuilder();		
+		for(int i=0; i<myMarkers.size(); i++){
+			LatLng point = myMarkers.get(i).getPosition();
+			if(point != null){
+				// Generate boundary
+				build.append(point.latitude);
+				build.append(",");
+				build.append(point.longitude);
+				build.append(",");
+			}
+		}
+		build.deleteCharAt(build.length() - 1);
+		this.strMarkers = build.toString();
+	}
+	public void removeMarkers(){
+		for(int i=0; i<myMarkers.size(); i++){
+			myMarkers.get(i).remove();
+		}
+	}
+	public void removeMarker(MyMarker it){
+		myMarkers.remove(it);
 	}
 	
 	public Integer getId() {
@@ -191,6 +225,31 @@ public class Note {
 	public List<MyPolyline> getMyPolylines() {
 		return this.myPolylines;
 	}
+	
+	
+	public String getStrMarkers() {
+		return this.strMarkers;
+	}
+	public List<MarkerOptions> getMarkers() {
+		//Convert strPolygons to polygons
+		List<MarkerOptions> markers = new ArrayList<MarkerOptions>();
+		String all = this.getStrMarkers();
+		if(all != null){
+			StringTokenizer tokensPoints = new StringTokenizer(all, ",");
+			while (tokensPoints.hasMoreTokens()) {
+				MarkerOptions options = new MarkerOptions();
+				String lat = tokensPoints.nextToken();
+				String lng = tokensPoints.nextToken();
+				options.position(new LatLng(Double.parseDouble(lat), Double.parseDouble(lng)));
+				markers.add(options);
+			}
+		}
+		return markers;
+	}
+	public List<MyMarker> getMyMarkers() {
+		return this.myMarkers;
+	}
+	
 	public Integer getColor() {
 		return color;
 	}
@@ -230,7 +289,19 @@ public class Note {
 	public void setPolylines(List<PolylineOptions> polys) {
 		this.polylines = polys;
 	}
+	public void setStrMarkers(String str) {
+		this.strMarkers = str;
+	}
 	public void setColor(Integer color) {
+		for(int i=0; i<this.myPolygons.size(); i++){
+			this.myPolygons.get(i).setFillColor(Color.argb(Color.alpha(color) - 150, Color.red(color), Color.green(color), Color.blue(color)));
+		}
+		for(int i=0; i<this.myPolylines.size(); i++){
+			this.myPolylines.get(i).setColor(color);
+		}
+		for(int i=0; i<this.myMarkers.size(); i++){
+			this.myMarkers.get(i).setColor(color);
+		}
 		this.color = color;
 	}
 	public void setVisible(Integer visible){
@@ -251,7 +322,7 @@ public class Note {
 			note.setComment(cursor.getString(cursor.getColumnIndex(TableNotes.COL_COMMENT)));
 			note.setStrPolygons(cursor.getString(cursor.getColumnIndex(TableNotes.COL_POLYGONS)));
 			note.setStrPolylines(cursor.getString(cursor.getColumnIndex(TableNotes.COL_LINES)));
-			//TODO points
+			note.setStrMarkers(cursor.getString(cursor.getColumnIndex(TableNotes.COL_POINTS)));
 			note.setColor(cursor.getInt(cursor.getColumnIndex(TableNotes.COL_COLOR)));
 			note.setVisible(cursor.getInt(cursor.getColumnIndex(TableNotes.COL_VISIBLE)));
 			note.setDeleted(cursor.getInt(cursor.getColumnIndex(TableNotes.COL_DELETED)));
