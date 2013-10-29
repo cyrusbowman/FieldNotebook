@@ -428,8 +428,9 @@ public class FragmentSlider extends Fragment implements OnClickListener, OnTouch
 		values.put(TableNotes.COL_LINES, note.getStrPolylines());
 		Log.d("SaveNote", "StrPolylines:" + note.getStrPolylines());
 		
-		//add here
-		
+		// Iaman and Patrick added this for demo 2
+	
+		// Get all the polygons, add their vertices to the bounding box
 		List<MyPolygon> listPolygons = note.getMyPolygons();
 		LatLngBounds.Builder builder = new LatLngBounds.Builder();
 		for(int i = 0;i<listPolygons.size();i++){
@@ -439,8 +440,8 @@ public class FragmentSlider extends Fragment implements OnClickListener, OnTouch
 			}
 		}
 		
+		// Do the same thing with the polylines
 		List<MyPolyline> listPolyline = note.getMyPolylines();
-		
 		for(int p=0;p<listPolyline.size();p++){
 			List<LatLng> points = listPolyline.get(p).getPoints();
 			for(int u = 0;u<points.size();u++){
@@ -448,18 +449,23 @@ public class FragmentSlider extends Fragment implements OnClickListener, OnTouch
 			}
 		}
 		
+		// TODO: there aren't markers or images yet, but add in the same test for those
+		// once they exist.
+		
+		// Create the boundary, get the borders, convert to a string
 		LatLngBounds bounds = builder.build();
 		LatLng northeast = bounds.northeast;
 		LatLng southwest = bounds.southwest;
-		
-		String newFieldBoundary = "'" + Double.toString(southwest.latitude) + "," + Double.toString(southwest.longitude) + ","+ Double.toString(southwest.latitude)+"," + Double.toString(northeast.longitude)+ "," + Double.toString(northeast.latitude)+","+ Double.toString(northeast.longitude)+ ","+Double.toString(northeast.latitude)+","+Double.toString(southwest.longitude) + "'";//and so on
+		String newFieldBoundary = Double.toString(southwest.latitude) + "," + Double.toString(southwest.longitude) + ","+ Double.toString(southwest.latitude)+"," + Double.toString(northeast.longitude)+ "," + Double.toString(northeast.latitude)+","+ Double.toString(northeast.longitude)+ ","+Double.toString(northeast.latitude)+","+Double.toString(southwest.longitude);//and so on
 		//newFieldBoundary should look like this: "Lat,Lng,Lat,Lng,Lat,Lng,Lat,Lng"
+		
+		// Update the database with the new boundary value:
 		ContentValues valuesField = new ContentValues();
 		valuesField.put(TableFields.COL_BOUNDARY, newFieldBoundary);
-		
 		String whereField = TableFields.COL_NAME + "= '" + note.getFieldName() + "'";
-		database.update(TableFields.TABLE_NAME, values, whereField, null);
 		database.update(TableFields.TABLE_NAME, valuesField, whereField, null);
+		
+		// Done with case file boundary creation
 		
 		//TODO more stuff
 		if(note.getId() == null){
