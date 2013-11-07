@@ -132,7 +132,9 @@ public class Note {
 				build.append(",");
 			}
 		}
-		build.deleteCharAt(build.length() - 1);
+		if(build.length() > 0){
+			build.deleteCharAt(build.length() - 1);
+		}
 		this.strMarkers = build.toString();
 	}
 	public void removeMarkers(){
