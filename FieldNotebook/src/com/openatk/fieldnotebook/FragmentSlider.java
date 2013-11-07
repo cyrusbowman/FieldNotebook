@@ -11,6 +11,7 @@ import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.Polygon;
 import com.google.android.gms.maps.model.PolygonOptions;
 import com.google.android.gms.maps.model.PolylineOptions;
+import com.openatk.fieldnotebook.FragmentDrawing.DrawingListener;
 import com.openatk.fieldnotebook.db.DatabaseHelper;
 import com.openatk.fieldnotebook.db.Field;
 import com.openatk.fieldnotebook.db.Note;
@@ -47,7 +48,9 @@ import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.TextView.OnEditorActionListener;
 
-public class FragmentSlider extends Fragment implements OnClickListener, OnTouchListener {
+public class FragmentSlider extends Fragment implements OnClickListener, OnTouchListener, DrawingListener {
+	private FragmentDrawing fragmentDrawing = null;
+	private FragmentSlider me = null;
 	private GoogleMap map;
 	private TextView tvName;
 	private TextView tvAcres;
@@ -87,10 +90,12 @@ public class FragmentSlider extends Fragment implements OnClickListener, OnTouch
 		public void SliderDragUp(int whereY);
 		public void SliderEditField();
 		public void SliderRequestData();
-		public void  SliderCompletePolygon();
+		public void SliderCompletePolygon();
 		public void SliderAddPolygon();
 		public void SliderEditPolygon(MyPolygon poly);
 		public void SliderAddNote();
+		public FragmentDrawing SliderShowDrawing();
+		public void SliderHideDrawing();
 	}
 
 	@Override
@@ -99,6 +104,7 @@ public class FragmentSlider extends Fragment implements OnClickListener, OnTouch
 		View view = inflater.inflate(R.layout.fragment_slider, container,
 				false);
 
+		me = this;
 		tvName = (TextView) view.findViewById(R.id.slider_tvName);
 		tvAcres = (TextView) view.findViewById(R.id.slider_tvAcres);
 		
@@ -124,7 +130,6 @@ public class FragmentSlider extends Fragment implements OnClickListener, OnTouch
 		
 		dbHelper = new DatabaseHelper(this.getActivity());
 		vi = (LayoutInflater) this.getActivity().getApplicationContext().getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-				
 		return view;
 	}
 	
@@ -163,7 +168,7 @@ public class FragmentSlider extends Fragment implements OnClickListener, OnTouch
 			notes = null;
 		}
 	}
-	
+		
 	public void finishPolygon(MyPolygon newPolygon){
 		if(currentNote != null){
 			//TODO handle edit finish? Maybe not, i think i removed on edit?
@@ -199,7 +204,6 @@ public class FragmentSlider extends Fragment implements OnClickListener, OnTouch
 		} else {
 			noteView.butShowHide.setImageResource(R.drawable.note_but_show);
 		}
-		
 		
 		//Add polygons from note to map
 		List<MyPolygon> myPolygons = note.getMyPolygons();
@@ -257,7 +261,6 @@ public class FragmentSlider extends Fragment implements OnClickListener, OnTouch
 				if(addingNote == false){
 					addingNote = true;
 					
-					
 					svNotes.scrollToAfterAdd(noteView.me.getTop());
 					//Edit this note
 					int index = listNotes.indexOfChild(noteView.me);
@@ -266,6 +269,10 @@ public class FragmentSlider extends Fragment implements OnClickListener, OnTouch
 					View newView = inflateOpenNote(currentNote);
 					listNotes.addView(newView, index);
 					currentOpenNoteView = (OpenNoteView) newView.getTag();
+					
+					//Show drawing fragment
+					fragmentDrawing = listener.SliderShowDrawing();
+					fragmentDrawing.setListener(me);
 				}
 			}
 		}
@@ -291,22 +298,18 @@ public class FragmentSlider extends Fragment implements OnClickListener, OnTouch
 		View view = vi.inflate(R.layout.note_open, null);
 		final OpenNoteView noteView = new OpenNoteView();
 		noteView.layNote = (RelativeLayout) view.findViewById(R.id.note_open);
-		noteView.butPoint = (ImageButton) view.findViewById(R.id.note_open_butPoint);
-		noteView.butLine = (ImageButton) view.findViewById(R.id.note_open_butLine);
-		noteView.butPolygon = (ImageButton) view.findViewById(R.id.note_open_butPolygon);
-		noteView.butColor = (ImageButton) view.findViewById(R.id.note_open_butColor);
-		noteView.butPicture = (ImageButton) view.findViewById(R.id.note_open_butPicture);
 		noteView.butDone = (ImageButton) view.findViewById(R.id.note_open_butDone);
 		noteView.butDelete = (ImageButton) view.findViewById(R.id.note_open_butDelete);
 		noteView.etComment = (EditText) view.findViewById(R.id.note_open_etComment);
 		
 		noteView.note = note;
-		
 		noteView.etComment.setText(note.getComment());
-		noteView.etComment.setImeActionLabel("Done", KeyEvent.KEYCODE_ENTER);
+		
+		/*noteView.etComment.setImeActionLabel("Done", KeyEvent.KEYCODE_ENTER);
 		noteView.etComment.setOnEditorActionListener(new OnEditorActionListener() {
 		    @Override
 		    public boolean onEditorAction(TextView v, int keyCode, KeyEvent event) {
+		    	Log.d("EtEvent", "EtEvent");
 		        if (event != null && (event.getAction() == KeyEvent.ACTION_DOWN) &&  (event.getKeyCode() == KeyEvent.KEYCODE_ENTER))
 		        {               
 		           // hide virtual keyboard
@@ -316,21 +319,12 @@ public class FragmentSlider extends Fragment implements OnClickListener, OnTouch
 		        }
 		        return false;
 		    }
-		});
+		});*/
 		
-		noteView.butPoint.setTag(noteView);
-		noteView.butLine.setTag(noteView);
-		noteView.butPolygon.setTag(noteView);
-		noteView.butColor.setTag(noteView);
-		noteView.butPicture.setTag(noteView);
+	
 		noteView.butDone.setTag(noteView);
 		noteView.butDelete.setTag(noteView);
 		
-		noteView.butPoint.setOnClickListener(openNoteClickListener);
-		noteView.butLine.setOnClickListener(openNoteClickListener);
-		noteView.butPolygon.setOnClickListener(openNoteClickListener);
-		noteView.butColor.setOnClickListener(openNoteClickListener);
-		noteView.butPicture.setOnClickListener(openNoteClickListener);
 		noteView.butDone.setOnClickListener(openNoteClickListener);
 		noteView.butDelete.setOnClickListener(openNoteClickListener);
 		noteView.me = view;
@@ -342,92 +336,9 @@ public class FragmentSlider extends Fragment implements OnClickListener, OnTouch
 		@Override
 		public void onClick(View v) {
 			OpenNoteView noteView = (OpenNoteView) v.getTag();
-			currentNote = noteView.note;
-			if(v.getId() == R.id.note_open_butPoint){
-				if(addingPoint == false){
-					map.setOnMapClickListener(sliderMapClickListener);
-					noteView.butPoint.setImageResource(R.drawable.cancel_point_v1);
-					addingPoint = true;
-				} else {
-					map.setOnMapClickListener((OnMapClickListener) listener);
-					noteView.butPoint.setImageResource(R.drawable.add_point_v1);
-					addingPoint = false;
-				}
-			} else if(v.getId() == R.id.note_open_butLine){
-				if(addingPolyline == false){
-					currentPolyline = new MyPolyline(map);
-					currentPolyline.edit();
-					noteView.butLine.setImageResource(R.drawable.close_line_v1);
-					addingPolyline = true;
-				} else {
-					if(currentPolyline != null) currentPolyline.complete();
-					map.setOnMapClickListener((OnMapClickListener) listener);
-					map.setOnMarkerClickListener((OnMarkerClickListener) listener);
-					map.setOnMarkerDragListener((OnMarkerDragListener) listener);
-					
-					if(currentNote != null){
-						//TODO handle edit finish? Maybe not, i think i removed on edit?
-						currentPolyline.setColor(Field.STROKE_COLOR);
-						currentNote.addMyPolyline(currentPolyline); //Adds a myPolyline
-					}
-					noteView.butLine.setImageResource(R.drawable.add_line_v1);
-					addingPolyline = false;
-				}
-			} else if(v.getId() == R.id.note_open_butPolygon){
-				if(addingPolygon == false){
-					noteView.butPolygon.setImageResource(R.drawable.close_polygon);
-					listener.SliderAddPolygon();
-					addingPolygon = true;
-				} else {
-					noteView.butPolygon.setImageResource(R.drawable.add_polygon);
-					listener.SliderCompletePolygon();
-					addingPolygon = false;
-				}
-			} else if(v.getId() == R.id.note_open_butColor){
-				AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
-				builder.setTitle("Pick a color");
-				CharSequence colors[] = {"Red", "Yellow", "Blue", "Green"};
-				builder.setItems(colors, new DialogInterface.OnClickListener() {
-		               public void onClick(DialogInterface dialog, int which) {
-		            	   int intColor = Color.GREEN;
-		            	   if(which == 0){
-		            		   //Red
-		            		   intColor = Color.RED;
-		            	   } else if(which == 1){
-		            		   //Yellow
-		            		   intColor = Color.YELLOW;
-		            	   } else if(which == 2){
-		            		   //Blue
-		            		   intColor = Color.BLUE;
-		            	   } else {
-		            		   //Green
-		            		   intColor = Color.GREEN;
-		            	   }
-		            	   //redraw polygons/polylines/points with new color
-		            	   currentNote.setColor(intColor);
-		               }
-				});
-				AlertDialog dialog = builder.create();
-				dialog.show();
-			} else if(v.getId() == R.id.note_open_butPicture){
-				AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
-				builder.setTitle("Geotag Photo?");
-				builder.setMessage("Would you like to associate this picture with a point?")
-	               .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
-	                   public void onClick(DialogInterface dialog, int id) {
-	                       
-	                   }
-	               })
-	               .setNegativeButton("No", new DialogInterface.OnClickListener() {
-	                   public void onClick(DialogInterface dialog, int id) {
-	                       
-	                   }
-	               });
-				AlertDialog dialog = builder.create();
-				dialog.show();
-			} else if(v.getId() == R.id.note_open_butDone){
+			if(v.getId() == R.id.note_open_butDone){
 				if(addingPolygon){
-					noteView.butPolygon.setImageResource(R.drawable.add_polygon);
+					fragmentDrawing.setPolygonIcon(R.drawable.add_polygon);
 					listener.SliderCompletePolygon();
 					addingPolygon = false;
 				}
@@ -443,10 +354,14 @@ public class FragmentSlider extends Fragment implements OnClickListener, OnTouch
 						currentPolyline.setColor(Field.STROKE_COLOR);
 						currentNote.addMyPolyline(currentPolyline); //Adds a myPolyline
 					}
-					noteView.butLine.setImageResource(R.drawable.add_line_v1);
+					fragmentDrawing.setPolylineIcon(R.drawable.add_line_v1);
 					addingPolygon = false;
 				}
 				
+				// hide virtual keyboard
+		        InputMethodManager imm =  (InputMethodManager)getActivity().getApplicationContext().getSystemService(Context.INPUT_METHOD_SERVICE);
+		        imm.hideSoftInputFromWindow(noteView.etComment.getWindowToken(), 0);
+		        
 				//Save the note
 				currentNote.setComment(noteView.etComment.getText().toString());
 				SaveNote(currentNote);
@@ -454,6 +369,12 @@ public class FragmentSlider extends Fragment implements OnClickListener, OnTouch
 				int index = listNotes.indexOfChild(noteView.me);
 				listNotes.removeView(noteView.me);
 				listNotes.addView(inflateNote(currentNote), index);
+				
+				//Hide drawing fragment
+				listener.SliderHideDrawing();
+				fragmentDrawing = null;
+				
+				
 			} else if(v.getId() == R.id.note_open_butDelete){
 				
 			}
@@ -461,11 +382,6 @@ public class FragmentSlider extends Fragment implements OnClickListener, OnTouch
 	};
 	static class OpenNoteView
     {
-		ImageButton butPoint;
-		ImageButton butLine;
-		ImageButton butPolygon;
-		ImageButton butColor;
-		ImageButton butPicture;
 		ImageButton butDone;
 		ImageButton butDelete;
 		EditText etComment;
@@ -517,24 +433,51 @@ public class FragmentSlider extends Fragment implements OnClickListener, OnTouch
 		//Check if clicked on any of current notes objects
 		if(this.currentNote != null){
 			//Loop through current notes polygons checking if touched
-			List<MyPolygon> polys = this.currentNote.getMyPolygons();
-			MyPolygon touchedPoly = null;
-			for(int i=0; i<polys.size(); i++){
-				if(polys.get(i).wasTouched(position)){
-					touchedPoly = polys.get(i);
+			//Check if touched polyline
+			List<MyPolyline> polylines = this.currentNote.getMyPolylines();
+			MyPolyline touchedPolyline = null;
+			for(int i=0; i<polylines.size(); i++){
+				Log.d("Checking Polyline touch...", "Checking...");
+				if(polylines.get(i).wasTouched(position)){
+					Log.d("Checking Polyline touch == ", "TRUE");
+					touchedPolyline = polylines.get(i);
 					break;
 				}
 			}
-			if(touchedPoly != null){
-				touchedPoly.edit();
+			if(touchedPolyline != null){
+				//Touched a polyline, edit it
+				touchedPolyline.edit();
 				if(this.currentOpenNoteView != null){
-					this.currentOpenNoteView.butPolygon.setImageResource(R.drawable.close_polygon);
+					if(fragmentDrawing != null) fragmentDrawing.setPolylineIcon(R.drawable.close_line_v1);
 				}
-				//Shouldn't recieve touch if already adding so this is fine
-				this.currentNote.removePolygon(touchedPoly);
-				listener.SliderEditPolygon(touchedPoly);
-				addingPolygon = true;
+				currentPolyline = touchedPolyline;
+				this.currentNote.removePolyline(touchedPolyline);
+				addingPolyline = true;
+			} else {
+				//Check if touched polygon
+				List<MyPolygon> polys = this.currentNote.getMyPolygons();
+				MyPolygon touchedPoly = null;
+				for(int i=0; i<polys.size(); i++){
+					if(polys.get(i).wasTouched(position)){
+						touchedPoly = polys.get(i);
+						break;
+					}
+				}
+				if(touchedPoly != null){
+					touchedPoly.edit();
+					if(this.currentOpenNoteView != null){
+						if(fragmentDrawing != null) fragmentDrawing.setPolygonIcon(R.drawable.close_polygon);
+					}
+					//Shouldn't recieve touch if already adding so this is fine
+					this.currentNote.removePolygon(touchedPoly);
+					listener.SliderEditPolygon(touchedPoly);
+					addingPolygon = true;
+				}
 			}
+			
+			
+			
+			
 		}
 	}
 	
@@ -597,6 +540,7 @@ public class FragmentSlider extends Fragment implements OnClickListener, OnTouch
 				//Add a new note
 				Note newNote = new Note(currentField.getName());
 				notes.add(newNote);
+				currentNote = newNote;
 				
 				View newView = inflateOpenNote(newNote);
 				currentOpenNoteView = (OpenNoteView) newView.getTag();
@@ -606,6 +550,10 @@ public class FragmentSlider extends Fragment implements OnClickListener, OnTouch
 				svNotes.scrollTo(0, 0);
 				//InputMethodManager inputMethodManager = (InputMethodManager) this.getActivity().getSystemService(Context.INPUT_METHOD_SERVICE);
 				//inputMethodManager.showSoftInput(newOpenNote.etComment, 0);
+				
+				//Show drawing fragment
+				fragmentDrawing = listener.SliderShowDrawing();
+				fragmentDrawing.setListener(me);
 			}
 		} else if (v.getId() == R.id.slider_butShowElevation) {
 			
@@ -651,9 +599,106 @@ public class FragmentSlider extends Fragment implements OnClickListener, OnTouch
 				currentNote.addMyMarker(currentPoint); //Adds a myPoint
 			}
 			map.setOnMapClickListener((OnMapClickListener) listener);
-			currentOpenNoteView.butPoint.setImageResource(R.drawable.add_point_v1);
+			if(fragmentDrawing != null) fragmentDrawing.setPointIcon(R.drawable.add_point_v1);
 			addingPoint = false;
 		}
 	};
+
+	@Override
+	public void DrawingClickPoint() {
+		if(addingPoint == false){
+			map.setOnMapClickListener(sliderMapClickListener);
+			fragmentDrawing.setPointIcon(R.drawable.cancel_point_v1);
+			addingPoint = true;
+		} else {
+			map.setOnMapClickListener((OnMapClickListener) listener);
+			fragmentDrawing.setPointIcon(R.drawable.add_point_v1);
+			addingPoint = false;
+		}		
+	}
+
+	@Override
+	public void DrawingClickPolyline() {
+		if(addingPolyline == false){
+			currentPolyline = new MyPolyline(map);
+			currentPolyline.edit();
+			fragmentDrawing.setPolylineIcon(R.drawable.close_line_v1);
+			addingPolyline = true;
+		} else {
+			if(currentPolyline != null) currentPolyline.complete();
+			map.setOnMapClickListener((OnMapClickListener) listener);
+			map.setOnMarkerClickListener((OnMarkerClickListener) listener);
+			map.setOnMarkerDragListener((OnMarkerDragListener) listener);
+			
+			if(currentNote != null){
+				//TODO handle edit finish? Maybe not, i think i removed on edit?
+				currentPolyline.setColor(Field.STROKE_COLOR);
+				currentNote.addMyPolyline(currentPolyline); //Adds a myPolyline
+			}
+			fragmentDrawing.setPolylineIcon(R.drawable.add_line_v1);
+			addingPolyline = false;
+		}
+	}
+
+	@Override
+	public void DrawingClickPolygon() {
+		if(addingPolygon == false){
+			fragmentDrawing.setPolygonIcon(R.drawable.close_polygon);
+			listener.SliderAddPolygon();
+			addingPolygon = true;
+		} else {
+			fragmentDrawing.setPolygonIcon(R.drawable.add_polygon);
+			listener.SliderCompletePolygon();
+			addingPolygon = false;
+		}		
+	}
+
+	@Override
+	public void DrawingClickColor() {
+		AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
+		builder.setTitle("Pick a color");
+		CharSequence colors[] = {"Red", "Yellow", "Blue", "Green"};
+		builder.setItems(colors, new DialogInterface.OnClickListener() {
+               public void onClick(DialogInterface dialog, int which) {
+            	   int intColor = Color.GREEN;
+            	   if(which == 0){
+            		   //Red
+            		   intColor = Color.RED;
+            	   } else if(which == 1){
+            		   //Yellow
+            		   intColor = Color.YELLOW;
+            	   } else if(which == 2){
+            		   //Blue
+            		   intColor = Color.BLUE;
+            	   } else {
+            		   //Green
+            		   intColor = Color.GREEN;
+            	   }
+            	   //redraw polygons/polylines/points with new color
+            	   currentNote.setColor(intColor);
+               }
+		});
+		AlertDialog dialog = builder.create();
+		dialog.show();		
+	}
+
+	@Override
+	public void DrawingClickCamera() {
+		AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
+		builder.setTitle("Geotag Photo?");
+		builder.setMessage("Would you like to associate this picture with a point?")
+           .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
+               public void onClick(DialogInterface dialog, int id) {
+                   
+               }
+           })
+           .setNegativeButton("No", new DialogInterface.OnClickListener() {
+               public void onClick(DialogInterface dialog, int id) {
+                   
+               }
+           });
+		AlertDialog dialog = builder.create();
+		dialog.show();		
+	}
 
 }

@@ -38,7 +38,7 @@ public class Note {
 	
 	//private List<MyLine> lines;
 	//private List<MyPoint> points;
-	private Integer color = null;
+	private Integer color = Color.RED;
 	private Integer visible = 0;
 	private Integer deleted = 0;
 	

@@ -34,6 +34,7 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.View.OnClickListener;
+import android.view.WindowManager;
 import android.view.animation.Animation;
 import android.view.animation.Transformation;
 import android.view.inputmethod.InputMethodManager;
@@ -88,8 +89,10 @@ public class MainActivity extends FragmentActivity implements OnClickListener,
 	private DatabaseHelper dbHelper;
 	
 	private int mCurrentState = 0;
+	
 	private int sliderIsShowing = 0;
 	private int addIsShowing = 0;
+	private int drawingIsShowing = 0;
 
 
 	private Field currentField = null;
@@ -101,6 +104,7 @@ public class MainActivity extends FragmentActivity implements OnClickListener,
 	
 	FragmentAddField fragmentAddField = null;
 	FragmentSlider fragmentSlider = null;
+	FragmentDrawing fragmentDrawing = null;
 	
 	
 	private static final int STATE_DEFAULT = 0;
@@ -156,6 +160,8 @@ public class MainActivity extends FragmentActivity implements OnClickListener,
 				//trelloController.sync();
 			}
 		}
+		
+		getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN);
 	}
 
 	@Override
@@ -549,50 +555,47 @@ public class MainActivity extends FragmentActivity implements OnClickListener,
 		this.invalidateOptionsMenu();
 	}
 
-	/*private Void showEdit(Boolean transition) {
-		if (editIsShowing == 0) {
-			hideAdd(false);
-			editIsShowing = 1;
-			FrameLayout layout = (FrameLayout) findViewById(R.id.fragment_container_edit_job);
-			RelativeLayout.LayoutParams params = (RelativeLayout.LayoutParams) layout
-					.getLayoutParams();
+	private Void showDrawing(Boolean transition) {
+		if (drawingIsShowing == 0) {
+			drawingIsShowing = 1;
+			// Set height back to wrap, in case add buttons or something
+			FrameLayout layout = (FrameLayout) findViewById(R.id.fragment_container_drawing);
+			RelativeLayout.LayoutParams params = (RelativeLayout.LayoutParams) layout.getLayoutParams();
 			params.height = RelativeLayout.LayoutParams.WRAP_CONTENT;
 			layout.setLayoutParams(params);
 
 			FragmentManager fm = getSupportFragmentManager();
-			FragmentEditJobPopup fragment = new FragmentEditJobPopup();
+			FragmentDrawing fragment = new FragmentDrawing();
 			FragmentTransaction ft = fm.beginTransaction();
-			if (transition)
-				ft.setCustomAnimations(R.anim.slide_up, R.anim.slide_down);
-			ft.add(R.id.fragment_container_edit_job, fragment, "edit_job");
+			if (transition) ft.setCustomAnimations(R.anim.slide_down2, R.anim.slide_up2);
+			ft.add(R.id.fragment_container_drawing, fragment, "drawing");
 			ft.commit();
-
-			fragmentEditField = fragment;
+			fragmentDrawing = fragment;
 		}
+		this.invalidateOptionsMenu();
 		return null;
 	}
 
-	private void hideEdit(Boolean transition) {
-		if (editIsShowing == 1) {
-			editIsShowing = 0;
+	private void hideDrawing(Boolean transition) {
+		if (drawingIsShowing == 1) {
+			drawingIsShowing = 0;
 			FragmentManager fm = getSupportFragmentManager();
-			FragmentEditJobPopup fragment = (FragmentEditJobPopup) fm
-					.findFragmentByTag("edit_job");
+			FragmentDrawing fragment = (FragmentDrawing) fm.findFragmentByTag("drawing");
 			// Set height so transition works
-			FrameLayout layout = (FrameLayout) findViewById(R.id.fragment_container_edit_job);
+			FrameLayout layout = (FrameLayout) findViewById(R.id.fragment_container_drawing);
 			RelativeLayout.LayoutParams params = (RelativeLayout.LayoutParams) layout
 					.getLayoutParams();
 			params.height = fragment.getHeight();
 			layout.setLayoutParams(params);
 			// Do transition
 			FragmentTransaction ft = fm.beginTransaction();
-			if (transition)
-				ft.setCustomAnimations(R.anim.slide_up, R.anim.slide_down);
+			if (transition) ft.setCustomAnimations(R.anim.slide_down2, R.anim.slide_up2);
 			ft.remove(fragment);
 			ft.commit();
-			fragmentEditField = null;
+			fragmentDrawing = null;
 		}
-	}*/
+		this.invalidateOptionsMenu();
+	}	
 
 	private Void showAdd(Boolean transition) {
 		if (addIsShowing == 0) {
@@ -608,8 +611,7 @@ public class MainActivity extends FragmentActivity implements OnClickListener,
 			FragmentManager fm = getSupportFragmentManager();
 			FragmentAddField fragment = new FragmentAddField();
 			FragmentTransaction ft = fm.beginTransaction();
-			if (transition)
-				ft.setCustomAnimations(R.anim.slide_up, R.anim.slide_down);
+			if (transition) ft.setCustomAnimations(R.anim.slide_up, R.anim.slide_down);
 			ft.add(R.id.fragment_container_add_field, fragment, "add_field");
 			ft.commit();
 			fragmentAddField = fragment;
@@ -632,8 +634,7 @@ public class MainActivity extends FragmentActivity implements OnClickListener,
 			layout.setLayoutParams(params);
 			// Do transition
 			FragmentTransaction ft = fm.beginTransaction();
-			if (transition)
-				ft.setCustomAnimations(R.anim.slide_up, R.anim.slide_down);
+			if (transition) ft.setCustomAnimations(R.anim.slide_up, R.anim.slide_down);
 			ft.remove(fragment);
 			ft.commit();
 			fragmentAddField = null;
@@ -683,8 +684,7 @@ public class MainActivity extends FragmentActivity implements OnClickListener,
 			layout.setLayoutParams(params);
 			// Do transition
 			FragmentTransaction ft = fm.beginTransaction();
-			if (transition)
-				ft.setCustomAnimations(R.anim.slide_up, R.anim.slide_down);
+			if (transition) ft.setCustomAnimations(R.anim.slide_up, R.anim.slide_down);
 			ft.remove(fragment);
 			ft.commit();
 			fragmentSlider = null;
@@ -855,7 +855,6 @@ public class MainActivity extends FragmentActivity implements OnClickListener,
 		}
 	}
 	
-	
 	private MyPolygon saveFieldPolygon = null;
 	private Boolean addingNotePolygon = false;
 	@Override
@@ -912,6 +911,17 @@ public class MainActivity extends FragmentActivity implements OnClickListener,
 			if(this.currentField != null) id = this.currentField.getId();
 			this.fragmentSlider.populateData(id, map);
 		}
+	}
+	
+	@Override
+	public FragmentDrawing SliderShowDrawing() {
+		showDrawing(true);
+		return this.fragmentDrawing;
+	}
+
+	@Override
+	public void SliderHideDrawing() {
+		hideDrawing(true);
 	}
 	
 	public class DropDownAnim extends Animation {
