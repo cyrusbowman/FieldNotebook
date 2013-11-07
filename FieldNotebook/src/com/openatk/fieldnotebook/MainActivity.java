@@ -65,12 +65,13 @@ import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.PolygonOptions;
 import com.openatk.fieldnotebook.FragmentAddField.AddFieldListener;
-import com.openatk.fieldnotebook.FragmentSlider.SliderListener;
 import com.openatk.fieldnotebook.db.DatabaseHelper;
 import com.openatk.fieldnotebook.db.Field;
 import com.openatk.fieldnotebook.db.TableFields;
 import com.openatk.fieldnotebook.drawing.MyPolygon;
 import com.openatk.fieldnotebook.drawing.MyPolygon.MyPolygonListener;
+import com.openatk.fieldnotebook.slider.FragmentSlider;
+import com.openatk.fieldnotebook.slider.FragmentSlider.SliderListener;
 
 public class MainActivity extends FragmentActivity implements OnClickListener,
 		OnMapClickListener, OnItemSelectedListener, OnMarkerClickListener, OnMarkerDragListener,
