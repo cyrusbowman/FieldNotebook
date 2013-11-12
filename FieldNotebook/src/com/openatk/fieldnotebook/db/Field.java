@@ -21,7 +21,7 @@ public class Field {
 	public static int STROKE_COLOR = Color.BLACK;
 	public static int STROKE_SELECTED = Color.WHITE;
 	public static int FILL_COLOR = Color.GRAY;
-	public static int FILL_COLOR_NOT_PLANNED = Color.parseColor("#babcbe");
+	public static int FILL_COLOR_NOT_PLANNED = Color.parseColor("#700088D1");
 	public static int FILL_COLOR_PLANNED = Color.parseColor("#ca575a");
 	public static int FILL_COLOR_STARTED = Color.parseColor("#eeb656");
 	public static int FILL_COLOR_DONE = Color.parseColor("#80c580");

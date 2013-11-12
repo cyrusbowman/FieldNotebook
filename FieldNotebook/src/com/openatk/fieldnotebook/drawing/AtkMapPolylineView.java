@@ -15,7 +15,6 @@ import com.google.android.gms.maps.Projection;
 import com.google.android.gms.maps.model.BitmapDescriptor;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
-import com.google.android.gms.maps.model.LatLngBounds;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.Polyline;
@@ -23,48 +22,76 @@ import com.google.android.gms.maps.model.PolylineOptions;
 import com.openatk.fieldnotebook.R;
 import com.openatk.fieldnotebook.db.Field;
 
-public class MyPolyline implements OnMapClickListener, OnMarkerDragListener, OnMarkerClickListener {
+public class AtkMapPolylineView implements OnMapClickListener, OnMarkerDragListener, OnMarkerClickListener {
 
-	private static double TOUCH_DISTANCE = 20.0f;
 	private static float STROKE_WIDTH = 2.0f;
 	private static int STROKE_COLOR = Color.BLACK;
 	private static int FILL_COLOR = Color.argb(128, 74, 80, 255);
 	
-	private Polyline real = null;
+	
+	AtkPolyline model = null;
+
+	
 	private GoogleMap map = null;
-	private Object data = null;
+	private Polyline polyline = null;
 	private List<Marker> markers;
+	private Object data = null;
+	
 	
 	private BitmapDescriptor iconSelected;
 	private BitmapDescriptor icon;
 	
-	private LatLngBounds bounds;
-	
-	
 	private Integer markerSelected = null;
 
-	public MyPolyline(GoogleMap map) {
+	public AtkMapPolylineView(GoogleMap map) {
 		this.map = map;
 		this.markers = new ArrayList<Marker>();
 		iconSelected = BitmapDescriptorFactory.fromResource(R.drawable.selected_vertex);
 		icon = BitmapDescriptorFactory.fromResource(R.drawable.unselected_vertex);
 	}
-	
-	public MyPolyline(Polyline real, GoogleMap map) {
-		this.real = real;
+	public AtkMapPolylineView(AtkPolyline model, GoogleMap map) {
+		this.model = model;
 		this.map = map;
 		this.markers = new ArrayList<Marker>();
 		iconSelected = BitmapDescriptorFactory.fromResource(R.drawable.selected_vertex);
 		icon = BitmapDescriptorFactory.fromResource(R.drawable.unselected_vertex);
-		
-		//Make bounds for polyline
-		List<LatLng> arrayLoc = this.real.getPoints();
-		updateBounds(arrayLoc);
 	}
 
 	//Ability to move and edit polyline
 	//Try to implement handle?? Should it be on screen or map? Try on screen first
 	//Make bounds around polyline, implement select as distance from point to line length
+	
+	private void draw(){
+		List<AtkPoint> points = this.model.getPoints();
+		if(points.size() < 2){
+			if (this.polyline != null) {
+				// remove polyline
+				this.polyline.remove();
+				this.polyline = null;
+			}
+		} if(points.size() >= 2) {
+			if (this.polyline == null) {
+				// Create polyline
+				PolylineOptions lineOptions = new PolylineOptions();
+				lineOptions.color(STROKE_COLOR);
+				lineOptions.width(STROKE_WIDTH);
+				lineOptions.zIndex(2.0f);
+				for (int i = 0; i < points.size(); i++) {
+					LatLng newLatLng = new LatLng(points.get(i).getLat(), points.get(i).getLng());
+					lineOptions.add(newLatLng);
+				}
+				this.polyline = map.addPolyline(lineOptions);
+			} else {
+				// Update polyline
+				List<LatLng> latLngPoints = new ArrayList<LatLng>();
+				for (int i = 0; i < points.size(); i++) {
+					LatLng newLatLng = new LatLng(points.get(i).getLat(), points.get(i).getLng());
+					latLngPoints.add(newLatLng);
+				}
+				this.polyline.setPoints(latLngPoints);
+			}
+		}
+	}
 	
 	//My Methods
 	// Custom functions
@@ -107,10 +134,10 @@ public class MyPolyline implements OnMapClickListener, OnMarkerDragListener, OnM
 		map.setOnMapClickListener(this);
 		map.setOnMarkerClickListener(this);
 		map.setOnMarkerDragListener(this);
-		if (real != null) {
-			List<LatLng> points = real.getPoints();
+		if (polyline != null) {
+			List<LatLng> points = polyline.getPoints();
 			// Draw markers
-			for (int i = 0; i < points.size(); i++) {
+			for (int i = 0; i < (points.size() - 1); i++) {
 				this.markers.add(map.addMarker(new MarkerOptions().position(points.get(i)).icon(icon).draggable(true).anchor(0.5f, 0.5f)));
 			}
 			if (this.markers.size() > 0) selectMarker(this.markers.size() - 1);
@@ -167,13 +194,13 @@ public class MyPolyline implements OnMapClickListener, OnMarkerDragListener, OnM
 			Log.d("MarkerSelected:", Integer.toString(markerSelected));
 			// Change icon of last selected marker
 			Marker oldMarker = markers.get(markerSelected.intValue());
-			//oldMarker.setIcon(icon);
+			oldMarker.setIcon(icon);
 		}
 		if (markerIndex != null) {
 			Log.d("MarkerIndex:", Integer.toString(markerIndex));
 			// Change icon on new selected marker
 			Marker oldMarker = this.markers.get(markerIndex.intValue());
-			//oldMarker.setIcon(iconSelected);
+			oldMarker.setIcon(iconSelected);
 		}
 		markerSelected = markerIndex;
 	}
@@ -190,13 +217,13 @@ public class MyPolyline implements OnMapClickListener, OnMarkerDragListener, OnM
 
 	public void updatePoints(List<LatLng> arrayLoc){
 		if(arrayLoc.size() < 2){
-			if (real != null) {
+			if (polyline != null) {
 				// remove polyline
-				real.remove();
-				real = null;
+				polyline.remove();
+				polyline = null;
 			}
 		} if(arrayLoc.size() >= 2) {
-			if (real == null) {
+			if (polyline == null) {
 				// Create polyline
 				PolylineOptions lineOptions = new PolylineOptions();
 				lineOptions.color(STROKE_COLOR);
@@ -204,39 +231,13 @@ public class MyPolyline implements OnMapClickListener, OnMarkerDragListener, OnM
 				lineOptions.zIndex(2.0f);
 				for (int i = 0; i < arrayLoc.size(); i++) {
 					lineOptions.add(arrayLoc.get(i));
-				}				
+				}
 				// Get back the mutable Polyline
-				real = map.addPolyline(lineOptions);
+				polyline = map.addPolyline(lineOptions);
 			} else {
 				// Update polyline
-				real.setPoints(arrayLoc);
+				polyline.setPoints(arrayLoc);
 			}
-		}
-		updateBounds(arrayLoc); //Update the bounding box
-	}
-	
-	private void updateBounds(List<LatLng> arrayLoc){
-		if(arrayLoc != null && arrayLoc.size() >= 2) {
-			LatLngBounds.Builder builder = new LatLngBounds.Builder();
-			for(int i=0; i<arrayLoc.size(); i++){
-				builder.include(arrayLoc.get(i));
-			}
-			this.bounds = builder.build();
-			//Pad a little
-			Projection proj = map.getProjection();
-			Point swPoint = proj.toScreenLocation(this.bounds.southwest);
-			Point nePoint = proj.toScreenLocation(this.bounds.northeast);
-			nePoint.x = nePoint.x + 10;
-			nePoint.y = nePoint.y + 10;
-			swPoint.x = swPoint.x - 10;
-			swPoint.y = swPoint.y - 10;
-			builder.include(proj.fromScreenLocation(nePoint));
-			builder.include(proj.fromScreenLocation(swPoint));
-			//Make new padded bounds
-			this.bounds = builder.build();
-			Log.d("Built polyline...", "Bounds built");
-		} else {
-			this.bounds = null;
 		}
 	}
 	
@@ -253,56 +254,29 @@ public class MyPolyline implements OnMapClickListener, OnMarkerDragListener, OnM
 	
 	
 	public Boolean wasTouched(LatLng point) {
-		if(this.bounds == null){
-			Log.d("Null Bounds", "Null bounds");
-		}
-		if(this.real != null && this.bounds != null){
-			Log.d("wasTouched", "Here1");
-			if(bounds.contains(point)){
-				Log.d("wasTouched", "Here2");
+		//TODO bounding box?
+		if(this.polyline != null){
+			/*List<LatLng> points = this.real.getPoints();
+			// Convert to screen coordinate
+			Projection proj = map.getProjection();
+			Point touchPoint = proj.toScreenLocation(point);
 
-				List<LatLng> points = this.real.getPoints();
-				// Convert to screen coordinate
-				Projection proj = map.getProjection();
-				Point touchPoint = proj.toScreenLocation(point);
-
-				// Convert boundary to screen coordinate
-				List<Point> polyline = new ArrayList<Point>();
-				for (int i = 0; i < points.size(); i++) {
-					polyline.add(proj.toScreenLocation(points.get(i)));
-				}
-				
-				// Ray Cast
-				return isPointByPolyline(touchPoint, polyline);
-			} else {
-				return false;
+			// Convert boundary to screen coordinate
+			List<Point> boundaryPoints = new ArrayList<Point>();
+			for (int i = 0; i < points.size(); i++) {
+				boundaryPoints.add(proj.toScreenLocation(points.get(i)));
 			}
+
+			// Ray Cast
+			return isPointInPolygon(touchPoint, boundaryPoints);*/
 		}
 		return false;
 	}
 	
-	private boolean isPointByPolyline(Point touchPoint, List<Point> polyline){
-		for(int i=0; i<(polyline.size()-1); i++){
-			Point a = polyline.get(i);
-			Point b = polyline.get(i+1);
-			Double touchDistance = pointToLineDistance(a,b,touchPoint);
-			Log.d("TouchDistance:", Double.toString(touchDistance));
-			if(touchDistance < TOUCH_DISTANCE){
-				return true;
-			}
-		}
-		return false;
-	}
 	
-	 private double pointToLineDistance(Point A, Point B, Point P) {
-		 //From http://www.ahristov.com/tutorial/geometry-games/point-line-distance.html
-		 double normalLength = Math.sqrt((B.x-A.x)*(B.x-A.x)+(B.y-A.y)*(B.y-A.y));
-		 return Math.abs((P.x-A.x)*(B.y-A.y)-(P.y-A.y)*(B.x-A.x))/normalLength;
-	 }
-	 
 	//Google Polyline methods
 	public int getColor() {
-		return real.getColor();
+		return polyline.getColor();
 	}
 
 	public Object getData() {
@@ -311,35 +285,35 @@ public class MyPolyline implements OnMapClickListener, OnMarkerDragListener, OnM
 
 	@Deprecated
 	public String getId() {
-		return real.getId();
+		return polyline.getId();
 	}
 
 	public List<LatLng> getPoints() {
-		return real.getPoints();
+		return polyline.getPoints();
 	}
 
 	public float getWidth() {
-		return real.getWidth();
+		return polyline.getWidth();
 	}
 
 	public float getZIndex() {
-		return real.getZIndex();
+		return polyline.getZIndex();
 	}
 
 	public boolean isGeodesic() {
-		return real.isGeodesic();
+		return polyline.isGeodesic();
 	}
 
 	public boolean isVisible() {
-		return real.isVisible();
+		return polyline.isVisible();
 	}
 
 	public void remove() {
-		real.remove();
+		polyline.remove();
 	}
 
 	public void setColor(int color) {
-		real.setColor(color);
+		polyline.setColor(color);
 	}
 
 	public void setData(Object data) {
@@ -347,43 +321,43 @@ public class MyPolyline implements OnMapClickListener, OnMarkerDragListener, OnM
 	}
 
 	public void setGeodesic(boolean geodesic) {
-		real.setGeodesic(geodesic);
+		polyline.setGeodesic(geodesic);
 	}
 
 	public void setPoints(List<LatLng> points) {
-		real.setPoints(points);
+		polyline.setPoints(points);
 	}
 
 	public void setVisible(boolean visible) {
-		real.setVisible(visible);
+		polyline.setVisible(visible);
 	}
 
 	public void setWidth(float width) {
-		real.setWidth(width);
+		polyline.setWidth(width);
 	}
 
 	public void setZIndex(float zIndex) {
-		real.setZIndex(zIndex);
+		polyline.setZIndex(zIndex);
 	}
 
 	public boolean equals(Object o) {
 		if (this == o) {
 			return true;
 		}
-		if (!(o instanceof MyPolyline)) {
+		if (!(o instanceof AtkMapPolylineView)) {
 			return false;
 		}
-		MyPolyline other = (MyPolyline) o;
-		return real.equals(other.real);
+		AtkMapPolylineView other = (AtkMapPolylineView) o;
+		return polyline.equals(other.polyline);
 	}
 
 	@Override
 	public int hashCode() {
-		return real.hashCode();
+		return polyline.hashCode();
 	}
 
 	@Override
 	public String toString() {
-		return real.toString();
+		return polyline.toString();
 	}
 }

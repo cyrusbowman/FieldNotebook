@@ -1,16 +1,15 @@
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:id="@+id/note_open"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:clickable="true"
     android:background="#EEE">
     <RelativeLayout
-        android:id="@+id/note_open_row1"
+        android:id="@+id/fragment_drawing_row1"
 	    android:layout_width="match_parent"
 	    android:layout_height="wrap_content"
 	    android:layout_alignParentTop="true"
-	    android:layout_marginTop="10dp">
-<<<<<<< HEAD
+	    android:layout_marginTop="5dp"
+	    android:layout_marginBottom="5dp">
 	    <LinearLayout
 	        android:layout_width="match_parent"
 	        android:layout_height="wrap_content"
@@ -21,7 +20,7 @@
 	        	android:layout_height="wrap_content"
 	        	android:layout_weight="1">
 	            <ImageButton 
-		            android:id="@+id/note_open_butPoint"
+		            android:id="@+id/fragment_drawing_butPoint"
 			        android:layout_width="80dp"
 			        android:layout_height="80dp"
 			        android:layout_centerInParent="true"
@@ -33,7 +32,7 @@
 	        	android:layout_height="wrap_content"
 	        	android:layout_weight="1">
 			    <ImageButton 
-		            android:id="@+id/note_open_butLine"
+		            android:id="@+id/fragment_drawing_butLine"
 			        android:layout_width="80dp"
 			        android:layout_height="80dp"
 					android:layout_centerInParent="true"
@@ -45,7 +44,7 @@
 	        	android:layout_height="wrap_content"
 	        	android:layout_weight="1">
 			    <ImageButton 
-		            android:id="@+id/note_open_butPolygon"
+		            android:id="@+id/fragment_drawing_butPolygon"
 			        android:layout_width="80dp"
 			        android:layout_height="80dp"
 			        android:layout_centerInParent="true"
@@ -57,71 +56,25 @@
 	        	android:layout_height="wrap_content"
 	        	android:layout_weight="1">
 			    <ImageButton 
-		            android:id="@+id/note_open_butColor"
+		            android:id="@+id/fragment_drawing_butColor"
 			        android:layout_width="80dp"
 			        android:layout_height="80dp"
 			        android:layout_centerInParent="true"
 			        android:src="@drawable/select_color"
 		           	/>
 			</RelativeLayout>
-<!-- 			Added camera icon -->
 			<RelativeLayout
 	            android:layout_width="wrap_content"
 	        	android:layout_height="wrap_content"
 	        	android:layout_weight="1">
 			    <ImageButton 
-		            android:id="@+id/note_take_picture"
+		            android:id="@+id/fragment_drawing_butPicture"
 			        android:layout_width="80dp"
 			        android:layout_height="80dp"
 			        android:layout_centerInParent="true"
-			        android:src="@drawable/add_picture"
+			        android:src="@drawable/select_color"
 		           	/>
 			</RelativeLayout>
-			
 		</LinearLayout>
-=======
-	    <EditText 
-			android:id="@+id/note_open_etComment"
-			android:layout_alignParentTop="true"
-			android:layout_width="match_parent"
-			android:layout_height="wrap_content"
-			android:layout_marginLeft="10dp"
-			android:layout_marginRight="10dp"
-			android:textSize="16sp"
-			android:hint="Comment"
-			android:textColor="#000"
-			android:inputType="textMultiLine"
-			android:lines="8"
-			android:minLines="6"
-			android:maxLines="10"
-			android:gravity="top|left"
-			android:scrollbars="vertical"
-			/>
->>>>>>> 0fa31143e972d9356aa4635f4471e96a2b2fc814
    </RelativeLayout>
-   <RelativeLayout
-        android:id="@+id/note_open_row2"
-	    android:layout_width="match_parent"
-	    android:layout_height="wrap_content"
-	    android:layout_below="@+id/note_open_row1"
-	    android:layout_marginTop="10dp">
-	    <ImageButton 
-            android:id="@+id/note_open_butDone"
-	        android:layout_width="50dp"
-	        android:layout_height="50dp"
-	        android:layout_alignParentLeft="true"
-	        android:layout_alignParentTop="true"
-	        android:src="@drawable/done"
-           	/>
-	    <ImageButton 
-            android:id="@+id/note_open_butDelete"
-	        android:layout_width="50dp"
-	        android:layout_height="50dp"
-	        android:layout_alignParentRight="true"
-	        android:layout_alignParentTop="true"
-           	/>
-   </RelativeLayout>
-    
-    
-    
 </RelativeLayout>
