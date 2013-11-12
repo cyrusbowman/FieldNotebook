@@ -1059,7 +1059,7 @@ public class MainActivity extends FragmentActivity implements OnClickListener,
 	}
 
 	@Override
-	public void AddFieldDone(String name, Integer acres) {
+	public void AddFieldDone(String name) {
 		// Check if field name is valid and doesn't exist already
 		if (name.length() == 0) {
 			// Tell them to input a name
@@ -1085,9 +1085,9 @@ public class MainActivity extends FragmentActivity implements OnClickListener,
 					wasAnEdit = true;
 				}
 				currentField.setName(name);
-				currentField.setAcres(acres);
+//				currentField.setAcres(acres);
 
-				Log.d("MainActivity", "Acres:" + Integer.toString(acres));
+//				Log.d("MainActivity", "Acres:" + Integer.toString(acres));
 				String strNewBoundary = "";
 				if(points != null && points.isEmpty() == false){
 					// Generate boundary
@@ -1138,7 +1138,7 @@ public class MainActivity extends FragmentActivity implements OnClickListener,
 						if (FieldsOnMap.get(i).getId() == currentField.getId()) {
 							FieldsOnMap.get(i).setName(name);
 							FieldsOnMap.get(i).setPolygon(this.currentPolygon);
-							FieldsOnMap.get(i).setAcres(acres);
+//							FieldsOnMap.get(i).setAcres(acres);
 							FieldsOnMap.get(i).setBoundary(points);
 						}
 					}
@@ -1263,7 +1263,7 @@ public class MainActivity extends FragmentActivity implements OnClickListener,
 	@Override
 	public void MyPolygonUpdateAcres(Float acres) {
 		if(this.fragmentAddField != null){
-			this.fragmentAddField.autoAcres(acres);
+//			this.fragmentAddField.autoAcres(acres);
 		}
 	}
 	

@@ -6,7 +6,7 @@
 
     <uses-sdk
         android:minSdkVersion="14"
-        android:targetSdkVersion="17" />
+        android:targetSdkVersion="18" />
     
     <uses-feature
         android:glEsVersion="0x00020000"
@@ -24,7 +24,12 @@
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
     <uses-permission android:name="com.google.android.providers.gsf.permission.READ_GSERVICES" />
     <uses-permission android:name="com.openatk.fieldnotebook.permission.MAPS_RECEIVE" />   
-     
+    
+    
+    <uses-permission android:name="android.permission.CAMERA" />
+ 	<uses-feature android:name="android.hardware.camera" />
+ 	<uses-feature android:name="android.hardware.camera.autofocus" />
+    
     <application
         android:allowBackup="true"
         android:icon="@drawable/ic_launcher"
@@ -40,7 +45,7 @@
         </activity>
         <meta-data
             android:name="com.google.android.maps.v2.API_KEY"
-            android:value="AIzaSyAsgWP-_VmfZg9Gy99om8C-0CYQdLp043w" />
+            android:value="AIzaSyAcsOiq9VHKoi0T8LgURgrh_vKN3W-az6k" />
     </application>
 
 </manifest>

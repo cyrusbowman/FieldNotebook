@@ -5,5 +5,6 @@
 	<classpathentry exported="true" kind="con" path="com.android.ide.eclipse.adt.DEPENDENCIES"/>
 	<classpathentry excluding="com/openatk/fieldnotebook/libs/" kind="src" path="src"/>
 	<classpathentry kind="src" path="gen"/>
+	<classpathentry kind="src" path="/android-maps-extensions"/>
 	<classpathentry kind="output" path="bin/classes"/>
 </classpath>
