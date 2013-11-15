@@ -1,0 +1,17 @@
+<view xmlns:android="http://schemas.android.com/apk/res/android"
+        class="com.openatk.fieldnotebook.ScrollAutoView"
+        android:id="@+id/note_list_scrollView"
+	    android:layout_width="match_parent"
+	    android:layout_height="match_parent"
+	    android:layout_below="@+id/slider_layMenu"
+	    android:layout_marginLeft="7dp"
+	    android:layout_marginRight="7dp">
+	    <LinearLayout 
+		    android:id="@+id/note_list_listNotes"
+		    android:layout_width="match_parent"
+		    android:layout_height="match_parent"
+		    android:layout_alignParentTop="true"
+		    android:orientation="vertical"/>
+</view>
+
+

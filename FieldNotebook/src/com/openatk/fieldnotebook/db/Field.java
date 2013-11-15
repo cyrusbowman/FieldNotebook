@@ -253,4 +253,16 @@ public class Field {
 			return null;
 		}
 	}
+	
+	public static List<Field> FindAllFieldsNotDeleted(SQLiteDatabase database) {
+			// Find current field
+			List<Field> fields = new ArrayList<Field>();
+			String where =  TableFields.COL_DELETED + " = 0";
+			Cursor cursor = database.query(TableFields.TABLE_NAME, TableFields.COLUMNS, where, null, null, null, null);
+			while(cursor.moveToNext()) {
+				fields.add(Field.cursorToField(cursor));
+			}
+			cursor.close();
+			return fields;
+	}
 }

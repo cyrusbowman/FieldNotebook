@@ -6,17 +6,19 @@
     android:background="@drawable/note"
     android:paddingBottom="10dp"
     android:layout_marginBottom="10dp">
+    
     <RelativeLayout
         android:id="@+id/note_open_row1"
 	    android:layout_width="match_parent"
 	    android:layout_height="wrap_content"
 	    android:layout_alignParentTop="true"
 	    android:layout_marginTop="10dp">
-	    <EditText 
+	    <view class="com.openatk.fieldnotebook.LinedEditText"
 			android:id="@+id/note_open_etComment"
 			android:layout_alignParentTop="true"
 			android:layout_width="match_parent"
 			android:layout_height="wrap_content"
+			android:padding="7dp"
 			android:layout_marginLeft="10dp"
 			android:layout_marginRight="10dp"
 			android:textSize="16sp"
@@ -28,6 +30,8 @@
 			android:maxLines="10"
 			android:gravity="top|left"
 			android:scrollbars="vertical"
+			android:background="#FFF"
+			android:textCursorDrawable="@null"
 			/>
    </RelativeLayout>
    <RelativeLayout
@@ -35,6 +39,26 @@
 	    android:layout_width="match_parent"
 	    android:layout_height="wrap_content"
 	    android:layout_below="@+id/note_open_row1"
+	    android:layout_marginTop="10dp">
+	    <HorizontalScrollView
+	        android:layout_width="wrap_content"
+	    	android:layout_height="wrap_content"
+	        android:id="@+id/note_open_sv_objects"
+	        android:layout_marginLeft="10dp"
+			android:layout_marginRight="10dp">
+	        <LinearLayout 
+	            android:layout_width="wrap_content"
+	    		android:layout_height="wrap_content"
+	            android:id="@+id/note_open_lay_objects"
+	            android:orientation="horizontal"
+	            />
+	    </HorizontalScrollView>
+   </RelativeLayout>
+   <RelativeLayout
+        android:id="@+id/note_open_row3"
+	    android:layout_width="match_parent"
+	    android:layout_height="wrap_content"
+	    android:layout_below="@+id/note_open_row2"
 	    android:layout_marginTop="10dp">
 	    <ImageButton 
             android:id="@+id/note_open_butDone"

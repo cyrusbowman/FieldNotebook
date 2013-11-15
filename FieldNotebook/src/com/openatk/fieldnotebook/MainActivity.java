@@ -33,6 +33,7 @@ import android.view.Display;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.ViewGroup;
 import android.view.View.OnClickListener;
 import android.view.WindowManager;
 import android.view.animation.Animation;
@@ -65,17 +66,27 @@ import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.PolygonOptions;
 import com.openatk.fieldnotebook.FragmentAddField.AddFieldListener;
-import com.openatk.fieldnotebook.FragmentSlider.SliderListener;
 import com.openatk.fieldnotebook.db.DatabaseHelper;
 import com.openatk.fieldnotebook.db.Field;
 import com.openatk.fieldnotebook.db.TableFields;
 import com.openatk.fieldnotebook.drawing.MyPolygon;
 import com.openatk.fieldnotebook.drawing.MyPolygon.MyPolygonListener;
+import com.openatk.fieldnotebook.fieldlist.FieldListListener;
+import com.openatk.fieldnotebook.fieldlist.FragmentFieldList;
+import com.openatk.fieldnotebook.notelist.FragmentNoteList;
+import com.openatk.fieldnotebook.notelist.NoteListListener;
+import com.openatk.fieldnotebook.sidebar.FragmentSidebar;
+import com.openatk.fieldnotebook.sidebar.SidebarListener;
+import com.openatk.fieldnotebook.slider.FragmentSlider;
+import com.openatk.fieldnotebook.slider.SliderListener;
 
 public class MainActivity extends FragmentActivity implements OnClickListener,
 		OnMapClickListener, OnItemSelectedListener, OnMarkerClickListener, OnMarkerDragListener,
-		AddFieldListener, SliderListener, MyPolygonListener {
+		AddFieldListener, SliderListener, SidebarListener, NoteListListener, FieldListListener, MyPolygonListener {
 	
+	private static String TAG = MainActivity.class.getName();
+	
+	private SupportMapFragment fragmentMap;
 	private GoogleMap map;
 	private UiSettings mapSettings;
 	
@@ -104,7 +115,12 @@ public class MainActivity extends FragmentActivity implements OnClickListener,
 	
 	FragmentAddField fragmentAddField = null;
 	FragmentSlider fragmentSlider = null;
+	FragmentSidebar fragmentSidebar = null;
 	FragmentDrawing fragmentDrawing = null;
+	FragmentNoteList fragmentNoteList = null;
+	FragmentFieldList fragmentFieldList = null;
+
+	ViewGroup vgSidebar = null;
 	
 	
 	private static final int STATE_DEFAULT = 0;
@@ -122,20 +138,20 @@ public class MainActivity extends FragmentActivity implements OnClickListener,
 		dbHelper = new DatabaseHelper(this);
 		
 		FragmentManager fm = getSupportFragmentManager();
-		SupportMapFragment f = (SupportMapFragment) fm.findFragmentById(R.id.map);
-		fragmentSlider = (FragmentSlider) fm.findFragmentByTag("slider");
+		fragmentMap = (SupportMapFragment) fm.findFragmentById(R.id.map);
+		fragmentSlider = (FragmentSlider) fm.findFragmentByTag(FragmentSlider.class.getName());
 		if(fragmentSlider != null){
 			sliderIsShowing = 1;
 		}
-		
+				
 		if (savedInstanceState == null) {
 			// First incarnation of this activity.
-			f.setRetainInstance(true);
+			fragmentMap.setRetainInstance(true);
 		} else {
 			// Reincarnated activity. The obtained map is the same map instance
 			// in the previous
 			// activity life cycle. There is no need to reinitialize it.
-			map = f.getMap();
+			map = fragmentMap.getMap();
 		}
 		checkGPS();
 
@@ -149,6 +165,19 @@ public class MainActivity extends FragmentActivity implements OnClickListener,
 			// Find current field
 			currentField = FindFieldById(savedInstanceState.getInt("currentField"));
 			this.addingBoundary = savedInstanceState.getString("drawingBoundary", "");
+		}
+		
+		vgSidebar = (ViewGroup) findViewById(R.id.fragment_container_sidebar);
+		if (vgSidebar != null) {
+			Log.i(TAG, "onCreate: adding FragmentSidebar to MainActivity");
+
+			// Add sidebar fragment to the activity's container layout
+			FragmentSidebar fragmentSidebar = new FragmentSidebar();
+			FragmentTransaction fragmentTransaction = fm.beginTransaction();
+			fragmentTransaction.replace(vgSidebar.getId(), fragmentSidebar, FragmentSidebar.class.getName());
+
+			// Commit the transaction 
+			fragmentTransaction.commit();
 		}
 
 		setUpMapIfNeeded();
@@ -280,15 +309,17 @@ public class MainActivity extends FragmentActivity implements OnClickListener,
 	
 	@Override
 	public void onMapClick(LatLng position) {
+		if(this.fragmentNoteList == null){
+			this.fragmentNoteList = this.getFragmentNoteList();
+		}
+		
 		if (addIsShowing == 1 || addingNotePolygon) {
 			Log.d("HERE", "Here1");
 			// Add points to polygon
 			this.currentPolygon.addPoint(position);
-		} else if(this.fragmentSlider != null && this.fragmentSlider.isAddingNote() == true) {
-			Log.d("HERE", "Here2");
-
+		} else if(this.fragmentNoteList != null && this.fragmentNoteList.isAddingNote() == true) {
 			//Adding a note, give the note the click events
-			this.fragmentSlider.onMapClick(position);
+			this.fragmentNoteList.onMapClick(position);
 		} else {
 			Log.d("HERE", "Here3");
 			if(this.fragmentSlider == null){
@@ -325,8 +356,10 @@ public class MainActivity extends FragmentActivity implements OnClickListener,
 					if (currentField == null) {
 						Log.d("MainActivity - onMapClick", "unable to find field by id");
 					} else {
-						if(sameField == false){
-							this.SliderRequestData(); //Populate slider again
+						if(sameField == false){								
+							this.SliderRequestData(null); //Populate slider again
+							this.SidebarRequestData(null);
+							this.NoteListRequestData(null); //Populate note list again
 						}
 					}
 					showSlider(true);
@@ -336,14 +369,25 @@ public class MainActivity extends FragmentActivity implements OnClickListener,
 			if (touched == false) {
 				// Close menu, save edits
 				Log.d("MainActivity - onMapClick", "Close");
-				if (this.currentPolygon != null) {
-					// Set back to unselected
-					this.currentPolygon.unselect();
-				}
 				hideSlider(true);
-				this.currentField = null;
+				ExitField();
 			}
 		}
+	}
+	
+	private void ExitField(){
+		if (this.currentPolygon != null) {
+			// Set back to unselected
+			this.currentPolygon.unselect();
+		}
+		this.currentField = null;
+		if(this.fragmentNoteList == null) this.fragmentNoteList = this.getFragmentNoteList();
+		if(this.fragmentSidebar == null) this.fragmentSidebar = this.getFragmentSidebar();
+		if(this.fragmentFieldList == null) this.fragmentFieldList = this.getFragmentFieldList();
+		
+		if(this.fragmentNoteList != null) this.fragmentNoteList.onClose();
+		if(this.fragmentSidebar != null) this.fragmentSidebar.populateData(null, this.fragmentMap.getView());
+		if(this.fragmentFieldList != null) this.fragmentFieldList.populateData(null);
 	}
 
 	private void drawMap() {
@@ -651,19 +695,18 @@ public class MainActivity extends FragmentActivity implements OnClickListener,
 			sliderIsShowing = 1;
 			// Set height back to wrap, in case add buttons or something
 			FrameLayout layout = (FrameLayout) findViewById(R.id.fragment_container_slider);
-			RelativeLayout.LayoutParams params = (RelativeLayout.LayoutParams) layout
-					.getLayoutParams();
-			params.height = RelativeLayout.LayoutParams.WRAP_CONTENT;
-			layout.setLayoutParams(params);
-			FragmentManager fm = getSupportFragmentManager();
-			FragmentSlider fragment = new FragmentSlider();
-			FragmentTransaction ft = fm.beginTransaction();
-			if (transition)
-				ft.setCustomAnimations(R.anim.slide_up, R.anim.slide_down);
-			ft.add(R.id.fragment_container_slider, fragment, "slider");
-			ft.commit();
-			fragmentSlider = fragment;
-			sliderPosition = 0;
+			if(layout != null){
+				RelativeLayout.LayoutParams params = (RelativeLayout.LayoutParams) layout.getLayoutParams();
+				params.height = RelativeLayout.LayoutParams.WRAP_CONTENT;
+				layout.setLayoutParams(params);
+				FragmentManager fm = getSupportFragmentManager();
+				this.fragmentSlider = new FragmentSlider();
+				FragmentTransaction ft = fm.beginTransaction();
+				if (transition) ft.setCustomAnimations(R.anim.slide_up, R.anim.slide_down);
+				ft.add(R.id.fragment_container_slider, this.fragmentSlider, FragmentSlider.class.getName());
+				ft.commit();
+				Log.d("MainActivity", "Showing Slider:" + FragmentSlider.class.getName());
+			}
 		}
 		this.invalidateOptionsMenu();
 		return null;
@@ -672,392 +715,33 @@ public class MainActivity extends FragmentActivity implements OnClickListener,
 	private void hideSlider(Boolean transition) {
 		if (sliderIsShowing == 1) {
 			sliderIsShowing = 0;
-			if(fragmentSlider != null) fragmentSlider.onClose();
+			if(fragmentNoteList == null){
+				this.fragmentNoteList = this.getFragmentNoteList();
+			}
+			if(fragmentNoteList != null) fragmentNoteList.onClose();
 			
 			FragmentManager fm = getSupportFragmentManager();
-			FragmentSlider fragment = (FragmentSlider) fm.findFragmentByTag("slider");
+			FragmentSlider fragment = (FragmentSlider) fm.findFragmentByTag(FragmentSlider.class.getName());
 			// Set height so transition works TODO 3 different heights?? Get from fragment, fragment.getMyHeight?
 			FrameLayout layout = (FrameLayout) findViewById(R.id.fragment_container_slider);
-			RelativeLayout.LayoutParams params = (RelativeLayout.LayoutParams) layout
-					.getLayoutParams();
-			params.height = fragment.getHeight();
-			layout.setLayoutParams(params);
-			// Do transition
-			FragmentTransaction ft = fm.beginTransaction();
-			if (transition) ft.setCustomAnimations(R.anim.slide_up, R.anim.slide_down);
-			ft.remove(fragment);
-			ft.commit();
+			if(layout != null){
+				RelativeLayout.LayoutParams params = (RelativeLayout.LayoutParams) layout
+						.getLayoutParams();
+				params.height = fragment.getHeight();
+				layout.setLayoutParams(params);
+				// Do transition
+				FragmentTransaction ft = fm.beginTransaction();
+				if (transition) ft.setCustomAnimations(R.anim.slide_up, R.anim.slide_down);
+				ft.remove(fragment);
+				ft.commit();
+			}
 			fragmentSlider = null;
 		}
 		this.invalidateOptionsMenu();
 	}	
 	
-	private int sliderStartDrag = 0;
-	private int sliderHeightStart = 0;
-	@Override
-	public void SliderDragDown(int start) {
-		Display display = getWindowManager().getDefaultDisplay();
-		Point size = new Point();
-		display.getSize(size);
-		int height = size.y;
-		
-		if(fragmentSlider != null){
-			ScrollView sv = (ScrollView) fragmentSlider.getView().findViewById(R.id.slider_scrollView);
-			RelativeLayout.LayoutParams params = (RelativeLayout.LayoutParams) sv.getLayoutParams();
-			sliderStartDrag = height - start - params.height;
-			sliderHeightStart = params.height;
-		}
-	}
-
-	@Override
-	public void SliderDragDragging(int whereY) {
-		Display display = getWindowManager().getDefaultDisplay();
-		Point size = new Point();
-		display.getSize(size);
-		int height = size.y;
-		
-		if(fragmentSlider != null){
-			ScrollView sv = (ScrollView) fragmentSlider.getView().findViewById(R.id.slider_scrollView);
-			RelativeLayout.LayoutParams params = (RelativeLayout.LayoutParams) sv.getLayoutParams();
-			
-			if((height - whereY - sliderStartDrag) > 0){
-				params.height = height - whereY - sliderStartDrag;
-			} else {
-				params.height = 0;
-			}
-			sv.setLayoutParams(params);
-		}
-	}
 	
-	@Override
-	public void SliderDragUp(int whereY) {
-		//Slider done dragging snap to 1 of 3 positions
-		Display display = getWindowManager().getDefaultDisplay();
-		Point size = new Point();
-		display.getSize(size);
-		int oneThirdHeight = size.y / 3;
-		if(whereY < oneThirdHeight){
-			//Fullscreen
-			Log.d("SliderDragUp", "fullscreen");
-		} else if(whereY < oneThirdHeight * 2) {
-			//Middle
-			Log.d("SliderDragUp", "middle");
-
-		} else {
-			//Closed
-			Log.d("SliderDragUp", "closed");
-
-		}
-		//Find end height
-		if(fragmentSlider != null){
-			ScrollView sv = (ScrollView) fragmentSlider.getView().findViewById(R.id.slider_scrollView);
-			RelativeLayout.LayoutParams params = (RelativeLayout.LayoutParams) sv.getLayoutParams();
-			if(params.height > sliderHeightStart){
-				//Make bigger
-				SliderGrow();
-			} else {
-				//Make smaller
-				SliderShrink();
-			}
-		}
-	}
 	
-	private int sliderPosition = 0;
-	private void SliderShrink(){
-		Display display = getWindowManager().getDefaultDisplay();
-		Point size = new Point();
-		display.getSize(size);
-		int oneThirdHeight = size.y / 3;
-		
-		if(fragmentSlider != null){
-			ScrollView sv = (ScrollView) fragmentSlider.getView().findViewById(R.id.slider_scrollView);
-			RelativeLayout.LayoutParams params = (RelativeLayout.LayoutParams) sv.getLayoutParams();
-			if(sliderPosition == 2 || sliderPosition == 1){
-				//Middle -> Small
-				//OneNote -> Small
-				DropDownAnim an = new DropDownAnim(sv, params.height, 0);
-				an.setDuration(300);
-				sv.startAnimation(an);
-				sliderPosition = 0;
-			} else if(sliderPosition == 3){
-				//Fullscreen -> Middle if has notes
-				//Fullscreen -> Small if no notes
-				if(fragmentSlider.hasNotes()){
-					DropDownAnim an = new DropDownAnim(sv, params.height, oneThirdHeight);
-					an.setDuration(300);
-					sv.startAnimation(an);
-					sliderPosition = 2;
-				} else {
-					DropDownAnim an = new DropDownAnim(sv, params.height, 0);
-					an.setDuration(300);
-					sv.startAnimation(an);
-					sliderPosition = 0;
-				}
-			}
-			sv.setLayoutParams(params);
-		}
-	}
-	private void SliderGrow(){
-		Display display = getWindowManager().getDefaultDisplay();
-		Point size = new Point();
-		display.getSize(size);
-		int oneThirdHeight = size.y / 3;
-		int actionBarHeight = 0;
-		TypedValue tv = new TypedValue();
-		if (getTheme().resolveAttribute(android.R.attr.actionBarSize, tv, true))
-		{
-		    actionBarHeight = TypedValue.complexToDimensionPixelSize(tv.data,getResources().getDisplayMetrics());
-		}
-		if(fragmentSlider != null){
-			RelativeLayout relAdd = (RelativeLayout) fragmentSlider.getView().findViewById(R.id.slider_layMenu);
-			Log.d("layMenu:", Integer.toString(relAdd.getHeight()));
-			ScrollView sv = (ScrollView) fragmentSlider.getView().findViewById(R.id.slider_scrollView);
-			RelativeLayout.LayoutParams params = (RelativeLayout.LayoutParams) sv.getLayoutParams();
-			if(sliderPosition == 0 || sliderPosition == 1){
-				//Small -> Middle
-				//OneNote -> Middle
-				DropDownAnim an = new DropDownAnim(sv, params.height, oneThirdHeight);
-				an.setDuration(300);
-				sv.startAnimation(an);
-				sliderPosition = 2;
-			} else if(sliderPosition == 2){
-				//Middle -> Fullscreen
-				DropDownAnim an = new DropDownAnim(sv, params.height, (size.y - relAdd.getHeight() - actionBarHeight));
-				an.setDuration(300);
-				sv.startAnimation(an);
-				sliderPosition = 3;
-			}
-			sv.setLayoutParams(params);
-		}
-	}
-	private void SliderOneNote(){
-		if(fragmentSlider != null){
-			RelativeLayout relAdd = (RelativeLayout) fragmentSlider.getView().findViewById(R.id.slider_layMenu);
-			Log.d("layMenu:", Integer.toString(relAdd.getHeight()));
-			ScrollView sv = (ScrollView) fragmentSlider.getView().findViewById(R.id.slider_scrollView);
-			RelativeLayout.LayoutParams params = (RelativeLayout.LayoutParams) sv.getLayoutParams();
-			
-			DropDownAnim an = new DropDownAnim(sv, params.height, fragmentSlider.oneNoteHeight());
-			an.setDuration(300);
-			sv.startAnimation(an);
-			sliderPosition = 1;
-			
-			sv.setLayoutParams(params);
-		}
-	}
-	private void SliderSizeMiddle(){
-		if(fragmentSlider != null){
-			if(sliderPosition == 3){
-				this.SliderShrink();
-			} else if(sliderPosition == 0){
-				this.SliderGrow();
-			}
-		}
-	}
-	
-	private MyPolygon saveFieldPolygon = null;
-	private Boolean addingNotePolygon = false;
-	@Override
-	public void SliderAddPolygon() {
-		// Add note polygon
-		addingNotePolygon = true;
-		saveFieldPolygon = this.currentPolygon;
-		this.currentPolygon = new MyPolygon(map, this);
-	}
-	
-	@Override
-	public void SliderEditPolygon(MyPolygon poly) {
-		// Add note polygon
-		addingNotePolygon = true;
-		saveFieldPolygon = this.currentPolygon;
-		this.currentPolygon = poly;
-	}
-	
-	@Override
-	public void SliderCompletePolygon(){
-		addingNotePolygon = false;
-		this.currentPolygon.complete();
-		//this.currentPolygon.setLabel(name, true);
-		this.currentPolygon.setFillColor(Field.FILL_COLOR_PLANNED);
-		if(this.fragmentSlider != null){
-			this.fragmentSlider.finishPolygon(this.currentPolygon);
-		}
-		this.currentPolygon = saveFieldPolygon;
-		saveFieldPolygon = null;
-	}
-	
-	@Override
-	public void SliderAddNote() {
-		// Add Resize to oneNote Size
-		this.SliderSizeMiddle();
-	}
-	
-	@Override
-	public void SliderEditField() {
-		showAdd(true);
-		
-		// Edit this fields points
-		if(this.currentPolygon == null){
-			this.currentPolygon = new MyPolygon(map, this);
-		} else {
-			this.currentPolygon.edit();
-		}
-	}
-
-	@Override
-	public void SliderRequestData() {
-		if(this.fragmentSlider != null){
-			Integer id = null;
-			if(this.currentField != null) id = this.currentField.getId();
-			this.fragmentSlider.populateData(id, map);
-		}
-	}
-	
-	@Override
-	public FragmentDrawing SliderShowDrawing() {
-		showDrawing(true);
-		return this.fragmentDrawing;
-	}
-
-	@Override
-	public void SliderHideDrawing() {
-		hideDrawing(true);
-	}
-	
-	public class DropDownAnim extends Animation {
-	    int targetHeight;
-	    int startHeight;
-	    View view;
-	    boolean down;
-
-	    public DropDownAnim(View view, int startHeight, int targetHeight) {
-	        this.view = view;
-	        this.startHeight = startHeight;
-	        this.targetHeight = targetHeight;
-	    }
-
-	    @Override
-	    protected void applyTransformation(float interpolatedTime, Transformation t) {
-	        int newHeight = (int) (startHeight - ((startHeight - targetHeight) * interpolatedTime));
-	        view.getLayoutParams().height = newHeight;
-	        view.requestLayout();
-	    }
-
-	    @Override
-	    public void initialize(int width, int height, int parentWidth,
-	            int parentHeight) {
-	        super.initialize(width, height, parentWidth, parentHeight);
-	    }
-
-	    @Override
-	    public boolean willChangeBounds() {
-	        return true;
-	    }
-	}
-	
-	/*
-	@Override
-	public void SyncControllerUpdateField(Integer localId) {
-		//Check if field still exists, if so redraw boundary
-		Field localField = this.FindFieldById(localId);
-		if(localField != null) {
-			MyPolygon polygon = null;
-			for (int i = 0; i < FieldsOnMap.size(); i++) {
-				if (FieldsOnMap.get(i).getId() == localField.getId()) {
-					polygon = FieldsOnMap.get(i).getPolygon();
-				}
-			}
-			
-			if(polygon != null){
-				//Redraw polygon
-				polygon.updatePoints(localField.getBoundary());
-			}
-		}		
-	}
-	
-	@Override
-	public void SyncControllerDeleteField(Integer localId){
-		//Check if field still exists, if so redraw boundary
-		Field localField = this.FindFieldById(localId);
-		if(localField != null) {
-			SQLiteDatabase database = dbHelper.getWritableDatabase();
-			database.delete(TableFields.TABLE_NAME, TableFields.COL_ID + " = " + Integer.toString(localId), null);
-			dbHelper.close();
-			
-			MyPolygon polygon = null;
-			for(int i=0; i<FieldsOnMap.size(); i++){
-				if(FieldsOnMap.get(i).getId() == localField.getId()){
-					polygon = FieldsOnMap.get(i).getPolygon();
-					FieldsOnMap.remove(i);
-				}
-			}
-			if(polygon != null){
-				//Remove polygon
-				polygon.remove();
-			}
-			
-			if(this.currentField != null && this.currentField.getId() == localField.getId()){
-				if(editIsShowing == 1) hideEdit(true);
-				if(addIsShowing == 1) hideAdd(true);
-				this.currentField = null;
-				//Remove polygon
-				if(this.currentPolygon != null){
-					this.currentPolygon.delete();
-					this.currentPolygon = null;
-				}
-			}
-			if(this.fragmentListView != null) this.fragmentListView.getData();
-		}
-	}
-	
-	@Override
-	public void SyncControllerAddField(Integer localId){
-		//Check if field still exists, if so redraw boundary
-		Field localField = this.FindFieldById(localId);
-		if(localField != null) {
-			// Add to list so we can catch click events
-			localField.setMap(map);
-			List<LatLng> points = localField.getBoundary();
-			
-			// Now draw this field
-			// Create polygon
-			if(points != null && points.isEmpty() == false) {
-				Job theJob = FindJobByFieldName(localField.getName());
-				PolygonOptions polygonOptions = new PolygonOptions();
-				if (theJob == null || theJob.getStatus() == Job.STATUS_NOT_PLANNED) {
-					polygonOptions.fillColor(Field.FILL_COLOR_NOT_PLANNED);
-				} else if (theJob.getStatus() == Job.STATUS_PLANNED) {
-					polygonOptions.fillColor(Field.FILL_COLOR_PLANNED);
-				} else if (theJob.getStatus() == Job.STATUS_STARTED) {
-					polygonOptions.fillColor(Field.FILL_COLOR_STARTED);
-				} else if (theJob.getStatus() == Job.STATUS_DONE) {
-					polygonOptions.fillColor(Field.FILL_COLOR_DONE);
-				}
-				polygonOptions.strokeWidth(Field.STROKE_WIDTH);
-				polygonOptions.strokeColor(Field.STROKE_COLOR);
-				for (int i = 0; i < points.size(); i++) {
-					polygonOptions.add(points.get(i));
-				}
-				localField.setPolygon(new MyPolygon(map, map.addPolygon(polygonOptions), this));
-				if (currentField != null && localField.getId() == currentField.getId()) {
-					this.currentPolygon = localField.getPolygon();
-					this.currentPolygon.setLabel(localField.getName(), true);
-				} else {
-					localField.getPolygon().setLabel(localField.getName());
-				}
-			}
-			FieldsOnMap.add(localField);
-		}
-		if (this.fragmentListView != null) this.fragmentListView.getData();
-	}
-
-	@Override
-	public void SyncControllerChangeOrganizations(){
-		drawMap();
-	}
-	*/
-
-
 	@Override
 	public Field AddFieldGetCurrentField() {
 		return this.currentField;
@@ -1194,7 +878,6 @@ public class MainActivity extends FragmentActivity implements OnClickListener,
 		//if (this.fragmentListView != null) this.fragmentListView.getData();
 	}
 	
-	
 	private Field FindFieldByName(String name) {
 		if (name != null) {
 			SQLiteDatabase database = dbHelper.getReadableDatabase();
@@ -1258,7 +941,10 @@ public class MainActivity extends FragmentActivity implements OnClickListener,
 
 	@Override
 	public boolean onMarkerClick(Marker arg0) {
-		if(this.fragmentSlider == null || this.fragmentSlider.isAddingNote() == false){
+		if(this.fragmentNoteList == null){
+			this.fragmentNoteList = this.getFragmentNoteList();
+		}
+		if(this.fragmentNoteList == null || this.fragmentNoteList.isAddingNote() == false){
 			Boolean found = false;
 			if (this.currentPolygon != null) {
 				found = this.currentPolygon.onMarkerClick(arg0);
@@ -1310,5 +996,249 @@ public class MainActivity extends FragmentActivity implements OnClickListener,
 	public void onNothingSelected(AdapterView<?> arg0) {
 		
 	}
+	
+	// --------------------------------- FragmentNoteList ----------------------------------
+	private MyPolygon saveFieldPolygon = null;
+	private Boolean addingNotePolygon = false;
+	private FragmentNoteList getFragmentNoteList(){
+		FragmentManager fm = getSupportFragmentManager();
+		return (FragmentNoteList) fm.findFragmentByTag(FragmentNoteList.class.getName());
+	}
+	
+	@Override
+	public void NoteListAddPolygon() {
+		// Add note polygon
+		addingNotePolygon = true;
+		saveFieldPolygon = this.currentPolygon;
+		this.currentPolygon = new MyPolygon(map, this);
+	}
+	
+	@Override
+	public void NoteListEditPolygon(MyPolygon poly) {
+		// Add note polygon
+		addingNotePolygon = true;
+		saveFieldPolygon = this.currentPolygon;
+		this.currentPolygon = poly;
+	}
+	
+	@Override
+	public void NoteListCompletePolygon(){
+		addingNotePolygon = false;
+		this.currentPolygon.complete();
+		//this.currentPolygon.setLabel(name, true);
+		this.currentPolygon.setFillColor(Field.FILL_COLOR_PLANNED);
+		if(this.fragmentNoteList == null){
+			this.fragmentNoteList = this.getFragmentNoteList();
+		}
+		if(this.fragmentNoteList != null){
+			this.fragmentNoteList.finishPolygon(this.currentPolygon);
+		}
+		this.currentPolygon = saveFieldPolygon;
+		saveFieldPolygon = null;
+	}
+	
+	@Override
+	public void NoteListRequestData(FragmentNoteList requester) {
+		if(requester != null) this.fragmentNoteList = requester;
+		if(this.fragmentNoteList == null){
+			this.fragmentNoteList = this.getFragmentNoteList();
+		}
+		if(this.fragmentNoteList != null){
+			Integer id = null;
+			if(this.currentField != null) id = this.currentField.getId();
+			this.fragmentNoteList.populateData(id, map);
+		} else {
+			Log.d("MainActivity", "this.fragmentNoteList is null");
+		}
+	}
+
+	@Override
+	public FragmentDrawing NoteListShowDrawing() {
+		showDrawing(true);
+		return this.fragmentDrawing;
+	}
+
+	@Override
+	public void NoteListHideDrawing() {
+		hideDrawing(true);		
+	}
+
+	@Override
+	public void NoteListAddNote() {
+		
+	}
+	
+	// ----------------------------- FragmentSlider -------------------------------
+
+	private FragmentSlider getFragmentSlider(){
+		FragmentManager fm = getSupportFragmentManager();
+		return (FragmentSlider) fm.findFragmentByTag(FragmentSlider.class.getName());
+	}
+
+	@Override
+	public void SliderAddNote() {
+		Log.d("MainActivity", "Slider Add Note");
+		//TODO Resize to oneNote Size
+		if(this.fragmentNoteList == null){
+			this.fragmentNoteList = this.getFragmentNoteList();
+		}
+		if(this.fragmentSlider == null){
+			this.fragmentSlider = this.getFragmentSlider();
+		}
+		if(this.fragmentNoteList != null){
+			Boolean addNote = this.fragmentNoteList.AddNote();
+			if(addNote && this.fragmentSlider != null){
+				this.fragmentSlider.SliderSizeMiddle();
+			}
+		}
+	}
+	
+	@Override
+	public void SliderEditField() {
+		showAdd(true);
+		
+		// Edit this fields points
+		if(this.currentPolygon == null){
+			this.currentPolygon = new MyPolygon(map, this);
+		} else {
+			this.currentPolygon.edit();
+		}
+	}
+	
+	public class DropDownAnim extends Animation {
+	    int targetHeight;
+	    int startHeight;
+	    View view;
+	    boolean down;
+
+	    public DropDownAnim(View view, int startHeight, int targetHeight) {
+	        this.view = view;
+	        this.startHeight = startHeight;
+	        this.targetHeight = targetHeight;
+	    }
+
+	    @Override
+	    protected void applyTransformation(float interpolatedTime, Transformation t) {
+	        int newHeight = (int) (startHeight - ((startHeight - targetHeight) * interpolatedTime));
+	        view.getLayoutParams().height = newHeight;
+	        view.requestLayout();
+	    }
+
+	    @Override
+	    public void initialize(int width, int height, int parentWidth,
+	            int parentHeight) {
+	        super.initialize(width, height, parentWidth, parentHeight);
+	    }
+
+	    @Override
+	    public boolean willChangeBounds() {
+	        return true;
+	    }
+	}
+
+	@Override
+	public void SliderRequestData(FragmentSlider requester) {
+		if(requester != null) this.fragmentSlider = requester;
+		if(this.fragmentSlider == null){
+			this.fragmentSlider = this.getFragmentSlider();
+		}
+		if(this.fragmentSlider != null){
+			this.fragmentSlider.populateData(this.currentField, this.fragmentMap.getView());
+		} else {
+			Log.d("MainActivity", "this.fragmentSlider is null");
+		}
+	}
+
+	// ----------------------------- FragmentSidebar -------------------------------
+	private FragmentSidebar getFragmentSidebar(){
+		FragmentManager fm = getSupportFragmentManager();
+		return (FragmentSidebar) fm.findFragmentByTag(FragmentSidebar.class.getName());
+	}
+	
+	@Override
+	public void SidebarAddNote() {
+		Log.d("MainActivity", "Sidebar Add Note");
+		//TODO Resize to oneNote Size
+		if(this.fragmentNoteList == null){
+			this.fragmentNoteList = this.getFragmentNoteList();
+		}
+		if(this.fragmentSidebar == null){
+			this.fragmentSidebar = this.getFragmentSidebar();
+		}
+		if(this.fragmentNoteList != null){
+			Boolean addNote = this.fragmentNoteList.AddNote();
+			if(addNote == false){
+				Log.d("Mainactivty", "Not adding note");
+			}
+		}
+	}
+	
+	@Override
+	public void SidebarAddField() {
+		this.addFieldMapView();
+	}
+
+	@Override
+	public void SidebarRequestData(FragmentSidebar requester) {
+		//TODO get container to set width, and have the slide work
+		if(requester != null) this.fragmentSidebar = requester;
+		if(this.fragmentSidebar == null){
+			this.fragmentSidebar = this.getFragmentSidebar();
+		}
+		if(this.fragmentSidebar != null){
+			this.fragmentSidebar.populateData(this.currentField, this.fragmentMap.getView());
+		} else {
+			Log.d("MainActivity", "this.fragmentSidebar is null");
+		}
+	}
+	
+	@Override
+	public void SidebarEditField() {
+		this.SliderEditField();
+	}
+	
+	@Override
+	public void SidebarBackToFieldsList() {
+		if(this.fragmentSidebar == null){
+			this.fragmentSidebar = this.getFragmentSidebar();
+		}
+		ExitField();
+	}
+	
+	// ----------------------------- FragmentFieldList -------------------------------
+	private FragmentFieldList getFragmentFieldList(){
+		FragmentManager fm = getSupportFragmentManager();
+		return (FragmentFieldList) fm.findFragmentByTag(FragmentFieldList.class.getName());
+	}
+	
+	@Override
+	public void FieldListRequestData(FragmentFieldList requester) {
+		if(requester != null) this.fragmentFieldList = requester;
+		if(this.fragmentFieldList == null){
+			this.fragmentFieldList = this.getFragmentFieldList();
+		}
+		if(this.fragmentFieldList != null){
+			Integer id = null;
+			if(this.currentField != null) id = this.currentField.getId();
+			this.fragmentFieldList.populateData(id);
+		} else {
+			Log.d("MainActivity", "this.fragmentFieldList is null");
+		}
+	}
+
+	@Override
+	public void FieldListAddNote() {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void FieldListSelectField(Field selectedField) {
+		this.currentField = selectedField;
+		this.SidebarRequestData(null);
+		this.NoteListRequestData(null); //Populate notes again
+	}
+
+
 }
 
