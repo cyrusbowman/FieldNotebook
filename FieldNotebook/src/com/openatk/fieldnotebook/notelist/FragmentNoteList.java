@@ -41,6 +41,7 @@ import android.view.ViewGroup;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.HorizontalScrollView;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
@@ -48,17 +49,11 @@ import android.widget.RelativeLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
 
-public class FragmentNoteList extends Fragment implements OnClickListener, DrawingListener, SliderListener {
+public class FragmentNoteList extends Fragment implements OnClickListener, DrawingListener {
 	private FragmentDrawing fragmentDrawing = null;
 	private FragmentNoteList me = null;
 	private GoogleMap map;
-	private TextView tvName;
-	private TextView tvAcres;
-	private ImageButton butEditField;
-	
-	private Button butShowElevation;
-	private Button butShowSoilType;
-	private Button butAddNote;
+
 	private ScrollAutoView svNotes;
 	private LinearLayout listNotes;
 	
@@ -85,30 +80,42 @@ public class FragmentNoteList extends Fragment implements OnClickListener, Drawi
 	@Override
 	public View onCreateView(LayoutInflater inflater, ViewGroup container,
 			Bundle savedInstanceState) {
-		View view = inflater.inflate(R.layout.fragment_slider, container,
+		View view = inflater.inflate(R.layout.fragment_note_list, container,
 				false);
 
 		me = this;
-				
-		butEditField = (ImageButton) view.findViewById(R.id.slider_butEditField);
-		butShowElevation = (Button) view.findViewById(R.id.slider_butShowElevation);
-		butShowSoilType = (Button) view.findViewById(R.id.slider_butShowSoilType);
-		butAddNote = (Button) view.findViewById(R.id.slider_butAddNote);
-
-		svNotes = (ScrollAutoView) view.findViewById(R.id.slider_scrollView);
-		listNotes = (LinearLayout) view.findViewById(R.id.slider_listNotes);
 		
-		svNotes.setOverScrollMode(ScrollView.OVER_SCROLL_NEVER); //Visual bottom of scroll effect
-
-		
-		butEditField.setOnClickListener(this);
-		butShowElevation.setOnClickListener(this);
-		butShowSoilType.setOnClickListener(this);
-		butAddNote.setOnClickListener(this);
+		svNotes = (ScrollAutoView) view.findViewById(R.id.note_list_scrollView);
+		listNotes = (LinearLayout) view.findViewById(R.id.note_list_listNotes);
 		
 		dbHelper = new DatabaseHelper(this.getActivity());
 		vi = (LayoutInflater) this.getActivity().getApplicationContext().getSystemService(Context.LAYOUT_INFLATER_SERVICE);
 		return view;
+	}
+	
+	@Override
+	public void onAttach(Activity activity) {
+		super.onAttach(activity);
+		
+		Fragment parentFragment = getParentFragment();
+		if (parentFragment != null && parentFragment instanceof NoteListListener) {
+			// Check if parent fragment (if there is one) is listener
+			listener = (NoteListListener) parentFragment;
+		} else if (activity != null && activity instanceof NoteListListener) {
+			// Otherwise, check if parent activity is listener
+			listener = (NoteListListener) activity;
+		} else if(parentFragment != null && parentFragment instanceof NoteListParentListener){
+			//Otherwise check if parent fragment knows who the listener is
+			listener = ((NoteListParentListener)parentFragment).NoteListGetListener();
+		} else if(activity != null && activity instanceof NoteListParentListener){
+			//Otherwise check if parent activity knows who the listener is
+			listener = ((NoteListParentListener)activity).NoteListGetListener();
+		}
+		else if (listener == null) {
+			Log.w("FragmentNoteList", "onAttach: neither the parent fragment or parent activity implement NoteListListener");
+			throw new ClassCastException("Parent Activity or parent fragment must implement NoteListListener");
+		}
+		Log.d("FragmentNoteList", "Attached");
 	}
 	
 	@Override
@@ -118,6 +125,7 @@ public class FragmentNoteList extends Fragment implements OnClickListener, Drawi
 	}
 
 	public void populateData(Integer currentFieldId, GoogleMap map) {
+		Log.d("FragmentNoteList", "PopulateData");
 		this.map = map;
 				
 		//Clear current
@@ -131,8 +139,6 @@ public class FragmentNoteList extends Fragment implements OnClickListener, Drawi
 			dbHelper.close();
 		}
 		if (currentField != null) {
-			tvName.setText(currentField.getName());
-			tvAcres.setText(Integer.toString(currentField.getAcres()) + " ac");
 			//Add all notes for this field
 			notes = Note.FindNotesByFieldName(dbHelper.getReadableDatabase(), currentField.getName());
 			dbHelper.close();
@@ -141,8 +147,6 @@ public class FragmentNoteList extends Fragment implements OnClickListener, Drawi
 				listNotes.addView(inflateNote(notes.get(i)));
 			}
 		} else {
-			tvName.setText("");
-			tvAcres.setText("");
 			notes = null;
 		}
 	}
@@ -278,10 +282,33 @@ public class FragmentNoteList extends Fragment implements OnClickListener, Drawi
 		noteView.butDone = (ImageButton) view.findViewById(R.id.note_open_butDone);
 		noteView.butDelete = (ImageButton) view.findViewById(R.id.note_open_butDelete);
 		noteView.etComment = (EditText) view.findViewById(R.id.note_open_etComment);
-		
-		noteView.note = note;
+		noteView.layObjects = (LinearLayout) view.findViewById(R.id.note_open_lay_objects);
+		noteView.svObjects = (HorizontalScrollView) view.findViewById(R.id.note_open_sv_objects);
+
 		noteView.etComment.setText(note.getComment());
 		
+		List<MyPolygon> polygons = note.getMyPolygons();
+		List<MyPolyline> polylines = note.getMyPolylines();
+		List<MyMarker> markers = note.getMyMarkers();
+		
+		for(int i=0; i<polygons.size(); i++){
+			ImageView img = new ImageView(this.getActivity());
+			img.setBackgroundResource(R.drawable.add_polygon);
+			noteView.layObjects.addView(img);
+		}
+		for(int i=0; i<polylines.size(); i++){
+			ImageView img = new ImageView(this.getActivity());
+			img.setBackgroundResource(R.drawable.add_line_v1);
+			noteView.layObjects.addView(img);
+		}
+		for(int i=0; i<markers.size(); i++){
+			ImageView img = new ImageView(this.getActivity());
+			img.setBackgroundResource(R.drawable.add_point_v1);
+			noteView.layObjects.addView(img);
+		}
+		
+		noteView.note = note;
+
 		/*noteView.etComment.setImeActionLabel("Done", KeyEvent.KEYCODE_ENTER);
 		noteView.etComment.setOnEditorActionListener(new OnEditorActionListener() {
 		    @Override
@@ -363,6 +390,8 @@ public class FragmentNoteList extends Fragment implements OnClickListener, Drawi
 		ImageButton butDelete;
 		EditText etComment;
 		RelativeLayout layNote;
+		HorizontalScrollView svObjects;
+		LinearLayout layObjects;
 		Note note;
 		View me;
     }
@@ -452,31 +481,6 @@ public class FragmentNoteList extends Fragment implements OnClickListener, Drawi
 				}
 			}
 		}
-	}
-	
-
-	@Override
-	public void onAttach(Activity activity) {
-		super.onAttach(activity);
-		
-		
-		// Check if parent fragment (if there is one) implements the image
-		// selection interface
-		Fragment parentFragment = getParentFragment();
-		if (parentFragment != null && parentFragment instanceof NoteListListener) {
-			listener = (NoteListListener) parentFragment;
-		}
-		// Otherwise, check if parent activity implements the image
-		// selection interface
-		else if (activity != null && activity instanceof NoteListListener) {
-			listener = (NoteListListener) activity;
-		}
-		else if (listener == null) {
-			Log.w("FragmentNoteList", "onAttach: neither the parent fragment or parent activity implement NoteListListener");
-			throw new ClassCastException("Parent Activity or parent fragment must implement NoteListListener");
-		}
-	
-		Log.d("FragmentNoteList", "Attached");
 	}
 	
 	public void onClose(){
@@ -632,9 +636,9 @@ public class FragmentNoteList extends Fragment implements OnClickListener, Drawi
 		dialog.show();		
 	}
 
-	@Override
-	public void SliderAddNote() {
+	public Boolean AddNote() {
 		if(addingNote == false){
+			Log.d("FragmentNoteList", "AddNote");
 			this.addingNote = true;
 			//Add a new note
 			Note newNote = new Note(currentField.getName());
@@ -653,7 +657,9 @@ public class FragmentNoteList extends Fragment implements OnClickListener, Drawi
 			//Show drawing fragment
 			fragmentDrawing = listener.NoteListShowDrawing();
 			fragmentDrawing.setListener(me);
+			return true;
 		}		
+		return false;
 	}
 
 }

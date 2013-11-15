@@ -19,6 +19,7 @@
 	        android:layout_height="50dp"
 	        android:layout_alignParentRight="true"
 	        android:layout_centerVertical="true"
+	        android:layout_marginLeft="10dp"
            	/>
     <RelativeLayout
         android:id="@+id/note_row1"
@@ -39,6 +40,7 @@
 	        android:singleLine="true"
 	        android:text="Comment"
 	        android:textColor="#000"
+	        android:background="#FFF"
 	        />
    </RelativeLayout>
    <RelativeLayout

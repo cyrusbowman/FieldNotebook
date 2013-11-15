@@ -1,0 +1,15 @@
+<view xmlns:android="http://schemas.android.com/apk/res/android"
+        class="com.openatk.fieldnotebook.ScrollAutoView"
+        android:id="@+id/field_list_scrollView"
+	    android:layout_width="match_parent"
+	    android:layout_height="match_parent"
+	    android:background="#EEE">
+	    <LinearLayout 
+		    android:id="@+id/field_list_list"
+		    android:layout_width="match_parent"
+		    android:layout_height="match_parent"
+		    android:layout_alignParentTop="true"
+		    android:orientation="vertical"/>
+</view>
+
+
