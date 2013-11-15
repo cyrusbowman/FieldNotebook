@@ -1,5 +1,10 @@
 package com.openatk.fieldnotebook.notelist;
 
+import java.io.File;
+import java.io.RandomAccessFile;
+import java.nio.MappedByteBuffer;
+import java.nio.channels.FileChannel;
+import java.nio.channels.FileChannel.MapMode;
 import java.util.List;
 
 import com.google.android.gms.maps.GoogleMap;
@@ -24,13 +29,26 @@ import com.openatk.fieldnotebook.drawing.MyPolygon;
 import com.openatk.fieldnotebook.drawing.MyPolyline;
 import com.openatk.fieldnotebook.slider.SliderListener;
 
+import android.annotation.TargetApi;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.database.sqlite.SQLiteDatabase;
+import android.graphics.Bitmap;
+import android.graphics.Bitmap.Config;
+import android.graphics.BitmapFactory;
+import android.graphics.BitmapFactory.Options;
+import android.graphics.Canvas;
 import android.graphics.Color;
+import android.graphics.Paint;
+import android.graphics.Rect;
+import android.graphics.Paint.Align;
+import android.graphics.drawable.BitmapDrawable;
+import android.os.Build;
+import android.os.Build.VERSION;
+import android.os.Build.VERSION_CODES;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.util.Log;
@@ -175,9 +193,11 @@ public class FragmentNoteList extends Fragment implements OnClickListener, Drawi
 		
 		noteView.tvComment.setText(note.getComment());
 		
+		noteView.tvComment.setTag(noteView);
 		noteView.butShowHide.setTag(noteView);
 		noteView.layNote.setTag(noteView);
-
+		
+		noteView.tvComment.setOnClickListener(noteClickListener);
 		noteView.butShowHide.setOnClickListener(noteClickListener);
 		noteView.layNote.setOnClickListener(noteClickListener);
 		
@@ -186,6 +206,19 @@ public class FragmentNoteList extends Fragment implements OnClickListener, Drawi
 		} else {
 			noteView.butShowHide.setImageResource(R.drawable.note_but_show);
 		}
+		
+		Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
+		paint.setColor(Color.BLACK);
+		paint.setShadowLayer(2f, 0f, 2f, Color.LTGRAY);
+		paint.setTextAlign(Align.RIGHT);
+		paint.setTextSize(20);
+		paint.setStrokeWidth(20);
+		
+		
+		
+		//Bitmap.Config conf = Bitmap.Config.ARGB_8888;
+		//Bitmap bitmap = Bitmap.createBitmap(bounds.width() + 5, bounds.height(), conf); //TODO create blank new bitmap
+
 		
 		//Add polygons from note to map
 		List<MyPolygon> myPolygons = note.getMyPolygons();
@@ -227,6 +260,55 @@ public class FragmentNoteList extends Fragment implements OnClickListener, Drawi
 		note.setColor(note.getColor());
 		noteView.imgColor.setBackgroundColor(note.getColor());
 		
+		//Show icon and draw number on icon
+		Integer numberOfPolygons = note.getMyPolygons().size();
+		if(numberOfPolygons == 0){
+			noteView.imgPolygons.setVisibility(View.GONE);
+		} else {
+			noteView.imgPolygons.setVisibility(View.VISIBLE);
+			String label = Integer.toString(numberOfPolygons);
+			Bitmap bitmap = decodeMutableBitmapFromResourceId(this.getActivity(), R.drawable.polygon);
+			Rect bounds = new Rect();
+			paint.getTextBounds(label, 0, label.length(), bounds);
+			float x = bitmap.getWidth() - 2.0f;
+			float y = -1.0f * bounds.top + (bitmap.getHeight() * 0.06f);
+			Canvas canvas = new Canvas(bitmap);
+			canvas.drawText(label, x, y, paint);
+			BitmapDrawable ob = new BitmapDrawable(getResources(), bitmap);
+			noteView.imgPolygons.setBackgroundDrawable(ob);
+		}
+		Integer numberOfPolylines = note.getMyPolylines().size();
+		if(numberOfPolylines == 0){
+			noteView.imgLines.setVisibility(View.GONE);
+		} else {
+			noteView.imgLines.setVisibility(View.VISIBLE);
+			String label = Integer.toString(numberOfPolylines);
+			Bitmap bitmap = decodeMutableBitmapFromResourceId(this.getActivity(), R.drawable.line_v1);
+			Rect bounds = new Rect();
+			paint.getTextBounds(label, 0, label.length(), bounds);
+			float x = bitmap.getWidth() - 2.0f;
+			float y = -1.0f * bounds.top + (bitmap.getHeight() * 0.06f);
+			Canvas canvas = new Canvas(bitmap);
+			canvas.drawText(label, x, y, paint);
+			BitmapDrawable ob = new BitmapDrawable(getResources(), bitmap);
+			noteView.imgLines.setBackgroundDrawable(ob);
+		}
+		Integer numberOfPoints = note.getMyMarkers().size();
+		if(numberOfPoints == 0){
+			noteView.imgPoints.setVisibility(View.GONE);
+		} else {
+			noteView.imgPoints.setVisibility(View.VISIBLE);
+			String label = Integer.toString(numberOfPoints);
+			Bitmap bitmap = decodeMutableBitmapFromResourceId(this.getActivity(), R.drawable.point);
+			Rect bounds = new Rect();
+			paint.getTextBounds(label, 0, label.length(), bounds);
+			float x = bitmap.getWidth() - 2.0f;
+			float y = -1.0f * bounds.top + (bitmap.getHeight() * 0.06f);
+			Canvas canvas = new Canvas(bitmap);
+			canvas.drawText(label, x, y, paint);
+			BitmapDrawable ob = new BitmapDrawable(getResources(), bitmap);
+			noteView.imgPoints.setBackgroundDrawable(ob);
+		}
 		
 		noteView.me = view;
 		view.setTag(noteView);
@@ -239,24 +321,40 @@ public class FragmentNoteList extends Fragment implements OnClickListener, Drawi
 			NoteView noteView = (NoteView) v.getTag();
 			if(v.getId() == R.id.note_butShowHide){
 				
+			} else if(v.getId() == R.id.note_txtComment){ 
+				if(addingNote == false){
+					addingNote = true;
+					//Set focus
+					OpenNoteView newView = openNote(noteView);
+					newView.etComment.requestFocus();
+					//Show keyboard
+					InputMethodManager inputMethodManager = (InputMethodManager) me.getActivity().getSystemService(Context.INPUT_METHOD_SERVICE);
+				    if (inputMethodManager != null) {
+				        inputMethodManager.toggleSoftInput(InputMethodManager.SHOW_FORCED, 0);
+				    }
+				}
 			} else if(v.getId() == R.id.note){
 				if(addingNote == false){
 					addingNote = true;
-					
-					svNotes.scrollToAfterAdd(noteView.me.getTop());
-					//Edit this note
-					int index = listNotes.indexOfChild(noteView.me);
-					currentNote = noteView.note;
-					listNotes.removeView(noteView.me);
-					View newView = inflateOpenNote(currentNote);
-					listNotes.addView(newView, index);
-					currentOpenNoteView = (OpenNoteView) newView.getTag();
-					
-					//Show drawing fragment
-					fragmentDrawing = listener.NoteListShowDrawing();
-					fragmentDrawing.setListener(me);
+					openNote(noteView);
 				}
 			}
+		}
+		
+		private OpenNoteView openNote(NoteView noteView){
+			svNotes.scrollToAfterAdd(noteView.me.getTop());
+			//Edit this note
+			int index = listNotes.indexOfChild(noteView.me);
+			currentNote = noteView.note;
+			listNotes.removeView(noteView.me);
+			View newView = inflateOpenNote(currentNote);
+			listNotes.addView(newView, index);
+			currentOpenNoteView = (OpenNoteView) newView.getTag();
+
+			//Show drawing fragment
+			fragmentDrawing = listener.NoteListShowDrawing();
+			fragmentDrawing.setListener(me);
+			return currentOpenNoteView;
 		}
 	};
 	
@@ -293,17 +391,17 @@ public class FragmentNoteList extends Fragment implements OnClickListener, Drawi
 		
 		for(int i=0; i<polygons.size(); i++){
 			ImageView img = new ImageView(this.getActivity());
-			img.setBackgroundResource(R.drawable.add_polygon);
+			img.setBackgroundResource(R.drawable.polygon);
 			noteView.layObjects.addView(img);
 		}
 		for(int i=0; i<polylines.size(); i++){
 			ImageView img = new ImageView(this.getActivity());
-			img.setBackgroundResource(R.drawable.add_line_v1);
+			img.setBackgroundResource(R.drawable.line_v1);
 			noteView.layObjects.addView(img);
 		}
 		for(int i=0; i<markers.size(); i++){
 			ImageView img = new ImageView(this.getActivity());
-			img.setBackgroundResource(R.drawable.add_point_v1);
+			img.setBackgroundResource(R.drawable.point);
 			noteView.layObjects.addView(img);
 		}
 		
@@ -660,6 +758,46 @@ public class FragmentNoteList extends Fragment implements OnClickListener, Drawi
 			return true;
 		}		
 		return false;
+	}
+	
+	@TargetApi(Build.VERSION_CODES.HONEYCOMB)
+	public static Bitmap decodeMutableBitmapFromResourceId(final Context context, final int bitmapResId) {
+	    final Options bitmapOptions = new Options();
+	    if (VERSION.SDK_INT >= VERSION_CODES.HONEYCOMB)
+	        bitmapOptions.inMutable = true;
+	    Bitmap bitmap = BitmapFactory.decodeResource(context.getResources(), bitmapResId, bitmapOptions);
+	    if (!bitmap.isMutable())
+	        bitmap = convertToMutable(context, bitmap);
+	    return bitmap;
+	}
+
+	@TargetApi(Build.VERSION_CODES.ICE_CREAM_SANDWICH)
+	public static Bitmap convertToMutable(final Context context, final Bitmap imgIn) {
+	    final int width = imgIn.getWidth(), height = imgIn.getHeight();
+	    final Config type = imgIn.getConfig();
+	    File outputFile = null;
+	    final File outputDir = context.getCacheDir();
+	    try {
+	        outputFile = File.createTempFile(Long.toString(System.currentTimeMillis()), null, outputDir);
+	        outputFile.deleteOnExit();
+	        final RandomAccessFile randomAccessFile = new RandomAccessFile(outputFile, "rw");
+	        final FileChannel channel = randomAccessFile.getChannel();
+	        final MappedByteBuffer map = channel.map(MapMode.READ_WRITE, 0, imgIn.getRowBytes() * height);
+	        imgIn.copyPixelsToBuffer(map);
+	        imgIn.recycle();
+	        final Bitmap result = Bitmap.createBitmap(width, height, type);
+	        map.position(0);
+	        result.copyPixelsFromBuffer(map);
+	        channel.close();
+	        randomAccessFile.close();
+	        outputFile.delete();
+	        return result;
+	    } catch (final Exception e) {
+	    } finally {
+	        if (outputFile != null)
+	            outputFile.delete();
+	    }
+	    return null;
 	}
 
 }
