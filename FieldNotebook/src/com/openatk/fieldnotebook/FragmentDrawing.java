@@ -53,7 +53,7 @@ public class FragmentDrawing extends Fragment implements OnClickListener {
 		butPolyline = (ImageButton) view.findViewById(R.id.fragment_drawing_butLine);
 		butPolygon = (ImageButton) view.findViewById(R.id.fragment_drawing_butPolygon);
 		butColor = (ImageButton) view.findViewById(R.id.fragment_drawing_butColor);
-		butCamera = (ImageButton) view.findViewById(R.id.fragment_drawing_butPicture);
+		butCamera = (ImageButton) view.findViewById(R.id.note_take_picture);
 
 		butPoint.setOnClickListener(this);
 		butPolyline.setOnClickListener(this);
@@ -95,7 +95,7 @@ public class FragmentDrawing extends Fragment implements OnClickListener {
 				listener.DrawingClickPolygon();
 			} else if (v.getId() == R.id.fragment_drawing_butColor) {
 				listener.DrawingClickColor();
-			} else if (v.getId() == R.id.fragment_drawing_butPicture) {
+			} else if (v.getId() == R.id.note_take_picture) {
 				listener.DrawingClickCamera();
 			}
 		}
