@@ -3,7 +3,9 @@ package com.openatk.fieldnotebook.slider;
 import com.openatk.fieldnotebook.R;
 import com.openatk.fieldnotebook.MainActivity.DropDownAnim;
 import com.openatk.fieldnotebook.db.Field;
+import com.openatk.fieldnotebook.fieldlist.FragmentFieldList;
 import com.openatk.fieldnotebook.notelist.FragmentNoteList;
+import com.openatk.fieldnotebook.sidebar.FragmentSidebar;
 
 import android.app.Activity;
 import android.graphics.Point;
@@ -35,9 +37,10 @@ public class FragmentSlider extends Fragment implements OnClickListener, OnTouch
 	private TextView tvName;
 	private TextView tvAcres;
 	private ImageButton butEditField;
-	private Button butShowElevation;
-	private Button butShowSoilType;
 	private Button butAddNote;
+	private ImageButton butBackToFields;
+	private ViewGroup fieldMenu;
+	private ViewGroup noteMenu;
 	
 	private SliderListener listener;
 	private Field currentField = null;
@@ -46,7 +49,9 @@ public class FragmentSlider extends Fragment implements OnClickListener, OnTouch
 	
 	private Boolean initialCreate;
 	private ViewGroup noteListContainer;
+	private ViewGroup fieldListContainer;
 	FragmentNoteList fragmentNoteList;
+	FragmentFieldList fragmentFieldList;
 
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
@@ -64,23 +69,47 @@ public class FragmentSlider extends Fragment implements OnClickListener, OnTouch
 			Bundle savedInstanceState) {
 		View view = inflater.inflate(R.layout.fragment_slider, container, false);
 
-		tvName = (TextView) view.findViewById(R.id.slider_tvName);
-		tvAcres = (TextView) view.findViewById(R.id.slider_tvAcres);
+		tvName = (TextView) view.findViewById(R.id.sidebar_tvName);
+		tvAcres = (TextView) view.findViewById(R.id.sidebar_tvAcres);
 		
-		view.setOnTouchListener(this);
-		tvName.setOnTouchListener(this);
-		tvAcres.setOnTouchListener(this);
+		//view.setOnTouchListener(this);
+		//tvName.setOnTouchListener(this);
+		//tvAcres.setOnTouchListener(this);
 		
-		butEditField = (ImageButton) view.findViewById(R.id.slider_butEditField);
-		butShowElevation = (Button) view.findViewById(R.id.slider_butShowElevation);
-		butShowSoilType = (Button) view.findViewById(R.id.slider_butShowSoilType);
-		butAddNote = (Button) view.findViewById(R.id.slider_butAddNote);
-
+		butEditField = (ImageButton) view.findViewById(R.id.sidebar_butEditField);
+		butAddNote = (Button) view.findViewById(R.id.sidebar_butAddNote);
+		butBackToFields = (ImageButton) view.findViewById(R.id.sidebar_butBackToFields);
+		fieldMenu = (ViewGroup) view.findViewById(R.id.sidebar_layMenuFields);
+		noteMenu = (ViewGroup) view.findViewById(R.id.sidebar_layMenuNotes);
+		fieldListContainer = (ViewGroup) view.findViewById(R.id.slider_fragment_listFields_container);
+		noteListContainer = (ViewGroup) view.findViewById(R.id.slider_fragment_listNotes_container);
 
 		butEditField.setOnClickListener(this);
-		butShowElevation.setOnClickListener(this);
-		butShowSoilType.setOnClickListener(this);
 		butAddNote.setOnClickListener(this);
+		butBackToFields.setOnClickListener(this);
+				
+		// If this is the first creation of the fragment, add child fragments
+		if (initialCreate) {
+			initialCreate = false;
+			// Prepare a transaction to add fragments to this fragment
+			FragmentTransaction fragmentTransaction = getChildFragmentManager().beginTransaction();
+
+			// Add the list fragment to this fragment's layout
+			if (fieldListContainer != null) {
+				Log.i(TAG, "onCreate: adding FragmentFieldList to FragmentSidebar");
+				// Add the fragment to the this fragment's container layout
+				fragmentFieldList = new FragmentFieldList();
+				fragmentTransaction.replace(fieldListContainer.getId(), fragmentFieldList, FragmentFieldList.class.getName());
+			}
+			if (noteListContainer != null) {
+				Log.i(TAG, "onCreate: adding FragmentNoteList to FragmentSidebar");
+				// Add the fragment to the this fragment's container layout
+				fragmentNoteList = new FragmentNoteList();
+				fragmentTransaction.replace(noteListContainer.getId(), fragmentNoteList, FragmentNoteList.class.getName());
+			}
+			// Commit the transaction
+			fragmentTransaction.commit();
+		}
 				
 		// If this is the first creation of the fragment, add child fragments
 		if (initialCreate) {
@@ -128,17 +157,24 @@ public class FragmentSlider extends Fragment implements OnClickListener, OnTouch
 	}
 
 	public void populateData(Field theField, View container) {
-		Log.d("FragmentSlider", "Populate Data");
+		Log.d("FragmentSidebar", "Populate Data");
 		//Get current field
 		currentField = theField;
 		this.container = container;
-		
 		if (currentField != null) {
 			tvName.setText(currentField.getName());
 			tvAcres.setText(Integer.toString(currentField.getAcres()) + " ac");
+			fieldListContainer.setVisibility(View.GONE);
+			fieldMenu.setVisibility(View.GONE);
+			noteListContainer.setVisibility(View.VISIBLE);
+			noteMenu.setVisibility(View.VISIBLE);
 		} else {
 			tvName.setText("");
 			tvAcres.setText("");
+			fieldListContainer.setVisibility(View.VISIBLE);
+			fieldMenu.setVisibility(View.VISIBLE);
+			noteListContainer.setVisibility(View.GONE);
+			noteMenu.setVisibility(View.GONE);
 		}
 	}
 
@@ -154,14 +190,14 @@ public class FragmentSlider extends Fragment implements OnClickListener, OnTouch
 
 	@Override
 	public void onClick(View v) {
-		if (v.getId() == R.id.slider_butEditField) {
+		if (v.getId() == R.id.sidebar_butEditField) {
 			listener.SliderEditField();
-		} else if (v.getId() == R.id.slider_butAddNote) {
+		} else if (v.getId() == R.id.sidebar_butAddField) {
+			listener.SliderAddField();
+		} else if (v.getId() == R.id.sidebar_butBackToFields){
+			listener.SliderBackToFieldsList();
+		} else if (v.getId() == R.id.sidebar_butAddNote){
 			listener.SliderAddNote();
-		} else if (v.getId() == R.id.slider_butShowElevation) {
-			
-		} else if (v.getId() == R.id.slider_butShowSoilType) {
-			
 		}
 	}
 	

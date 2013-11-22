@@ -1222,6 +1222,18 @@ public class MainActivity extends FragmentActivity implements OnClickListener,
 		this.NoteListRequestData(null); //Populate notes again
 	}
 
+	@Override
+	public void SliderBackToFieldsList() {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void SliderAddField() {
+		// TODO Auto-generated method stub
+		
+	}
+
 
 }
 

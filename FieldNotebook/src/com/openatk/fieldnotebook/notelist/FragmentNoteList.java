@@ -75,7 +75,7 @@ import com.openatk.fieldnotebook.drawing.MyMarker;
 import com.openatk.fieldnotebook.drawing.MyPolygon;
 import com.openatk.fieldnotebook.drawing.MyPolyline;
 
-public class FragmentNoteList extends Fragment implements OnClickListener, DrawingListener {
+public class FragmentNoteList extends Fragment implements  DrawingListener {
 	private static final int REQUEST_CODE = 1;
 
 	private FragmentDrawing fragmentDrawing = null;
@@ -713,16 +713,16 @@ public class FragmentNoteList extends Fragment implements OnClickListener, Drawi
 		}
 	}
 
-	@Override
-	public void onClick(View v) {
-
-		if (v.getId() == R.id.slider_butShowElevation) {
-			
-
-		} else if (v.getId() == R.id.slider_butShowSoilType) {
-
-		}
-	}
+//	@Override
+//	public void onClick(View v) {
+//
+//		if (v.getId() == R.id.slider_butShowElevation) {
+//			
+//
+//		} else if (v.getId() == R.id.slider_butShowSoilType) {
+//
+//		}
+//	}
 
 	
 	public boolean isAddingNote(){

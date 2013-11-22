@@ -1,5 +1,7 @@
 package com.openatk.fieldnotebook.slider;
 
+import com.openatk.fieldnotebook.sidebar.FragmentSidebar;
+
 /**
  * Interface to dispatch image selections.
  * 
@@ -14,6 +16,8 @@ public interface SliderListener {
 	 * @param position
 	 */
 	public void SliderAddNote();
-	public void SliderRequestData(FragmentSlider requester);
+	public void SliderRequestData(FragmentSlider fragmentSlider);
 	public void SliderEditField();
+	public void SliderBackToFieldsList();
+	public void SliderAddField();
 }
