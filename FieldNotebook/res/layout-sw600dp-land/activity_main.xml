@@ -1,0 +1,35 @@
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical" >
+
+	<fragment
+	    android:id="@+id/map"
+	    android:name="pl.mg6.android.maps.extensions.SupportMapFragment"
+	    android:layout_width="match_parent"
+	    android:layout_height="match_parent" />
+	
+	<FrameLayout
+	    android:id="@+id/fragment_container_sidebar"
+	    android:layout_width="300dp"
+	    android:layout_height="match_parent"
+	    android:layout_alignParentLeft="true"
+	     />
+	
+	<FrameLayout
+	    android:id="@+id/fragment_container_add_field"
+	    android:layout_width="match_parent"
+	    android:layout_height="wrap_content"
+	    android:layout_alignParentBottom="true"
+	    android:layout_toRightOf="@+id/fragment_container_sidebar"
+	     />	
+	<FrameLayout
+	    android:id="@+id/fragment_container_drawing"
+	    android:layout_width="match_parent"
+	    android:layout_height="wrap_content"
+	    android:layout_alignParentTop="true"
+	    android:layout_toRightOf="@+id/fragment_container_sidebar"
+	     />	
+	     
+</RelativeLayout>

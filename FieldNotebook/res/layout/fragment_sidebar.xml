@@ -6,53 +6,63 @@
     android:background="#D1D1D1">
     
     <RelativeLayout
-        android:id="@+id/slider_layMenu"
+        android:id="@+id/sidebar_layMenuNotes"
 	    android:layout_width="wrap_content"
 	    android:layout_height="wrap_content"
 	    android:layout_centerInParent="true"
-	    android:layout_alignParentTop="true">
+	    android:layout_alignParentTop="true"
+	    android:visibility="gone">
+	    <ImageButton 
+	        android:id="@+id/sidebar_butBackToFields"
+	        android:layout_width="wrap_content"
+	        android:layout_height="wrap_content"
+	        android:layout_alignParentLeft="true"
+	        android:layout_centerVertical="true"
+	        android:layout_marginLeft="7dp"
+	        android:background="@drawable/back"
+	        />
 	    <RelativeLayout
-	        android:id="@+id/slider_layTitle"
+	        android:id="@+id/sidebar_layTitle"
 		    android:layout_width="wrap_content"
 		    android:layout_height="wrap_content"
-		    android:layout_alignParentLeft="true"
+		    android:layout_toRightOf="@+id/sidebar_butBackToFields"
 		    android:layout_alignParentTop="true">
 		    <RelativeLayout
-		        android:id="@+id/slider_layTitleRow1"
+		        android:id="@+id/sidebar_layTitleRow1"
 			    android:layout_width="wrap_content"
 			    android:layout_height="wrap_content"
 			    android:layout_alignParentLeft="true"
 			    android:layout_alignParentTop="true"
 			    android:paddingTop="10dp">
 			    <TextView
-			        android:id="@+id/slider_tvName"
+			        android:id="@+id/sidebar_tvName"
 			        android:layout_width="wrap_content"
 			        android:layout_height="wrap_content"
 			        android:layout_centerInParent="true"
-			        android:layout_marginLeft="30dp"
+			        android:layout_marginLeft="10dp"
 			        android:textStyle="bold"
 			        android:textSize="24sp"
 			        android:text="Field 4" 
 			        />
 			    <ImageButton 
-					android:id="@+id/slider_butEditField"
+					android:id="@+id/sidebar_butEditField"
 					android:layout_width="32dp"
 					android:layout_height="32dp"
 				    android:layout_centerInParent="true"
-					android:layout_toRightOf="@+id/slider_tvName"
+					android:layout_toRightOf="@+id/sidebar_tvName"
 					android:layout_marginLeft="5dp"
 					android:background="@drawable/edit"
 					/>
 		    </RelativeLayout>
 		    <RelativeLayout
-		        android:id="@+id/slider_layTitleRow2"
+		        android:id="@+id/sidebar_layTitleRow2"
 			    android:layout_width="wrap_content"
 			    android:layout_height="wrap_content"
 			    android:layout_alignParentLeft="true"
-			    android:layout_below="@+id/slider_layTitleRow1"
+			    android:layout_below="@+id/sidebar_layTitleRow1"
 			    android:paddingBottom ="10dp" >
 			    <TextView 
-			        android:id="@+id/slider_tvAcres"
+			        android:id="@+id/sidebar_tvAcres"
 			        android:layout_width="wrap_content"
 			        android:layout_height="wrap_content"
 			        android:layout_alignParentLeft="true"
@@ -63,52 +73,24 @@
 			        android:text="84"
 			        />
 			    <TextView 
-			        android:id="@+id/slider_label_acres"
+			        android:id="@+id/sidebar_label_acres"
 			        android:layout_width="wrap_content"
 			        android:layout_height="wrap_content"
 			        android:layout_alignParentTop="true"
-			        android:layout_toRightOf="@+id/slider_tvAcres"
+			        android:layout_toRightOf="@+id/sidebar_tvAcres"
 			        android:textSize="20sp"
 			        android:text="acres"
 			        />
 			</RelativeLayout>
 		</RelativeLayout>
-	
 	    <RelativeLayout
-	        android:id="@+id/slider_layRow1"
-		    android:layout_width="match_parent"
-		    android:layout_height="wrap_content"
-		    android:layout_centerInParent="true"
-		    android:layout_below="@+id/slider_layTitle"
-		    android:visibility="gone">
-		    <LinearLayout
-		        android:layout_width="match_parent"
-		        android:layout_height="wrap_content"
-		        android:orientation="horizontal">
-			    <Button
-			        android:id="@+id/slider_butShowElevation"
-			        android:layout_width="0dp"
-			        android:layout_height="40dp"
-			        android:layout_weight="0.5"
-			        android:text="Show Elevation" />
-				<Button 
-			        android:id="@+id/slider_butShowSoilType"
-			        android:layout_width="0dp"
-			        android:layout_height="40dp"
-			        android:text="Show Soil Type"
-			        android:layout_weight="0.5"
-			        />
-		    </LinearLayout>
-	    </RelativeLayout>
-	    
-	    <RelativeLayout
-	        android:id="@+id/slider_layAdd"
+	        android:id="@+id/sidebar_layAdd"
 		    android:layout_width="match_parent"
 		    android:layout_height="wrap_content"
 		    android:layout_centerInParent="true"
 		    android:layout_alignParentRight="true">
 			<Button 
-		        android:id="@+id/slider_butAddNote"
+		        android:id="@+id/sidebar_butAddNote"
 		        android:layout_width="60dp"
 		        android:layout_height="60dp"
 		        android:layout_alignParentRight="true"
@@ -118,12 +100,44 @@
 	    </RelativeLayout>
     </RelativeLayout>
     
+    <RelativeLayout
+        android:id="@+id/sidebar_layMenuFields"
+	    android:layout_width="match_parent"
+	    android:layout_height="wrap_content"
+	    android:layout_alignParentLeft="true"
+	    android:layout_alignParentTop="true"
+	    android:background="#999">
+	    <TextView
+	        android:id="@+id/sidebar_tvFieldsTitle"
+	        android:layout_width="wrap_content"
+	        android:layout_height="wrap_content"
+	        android:layout_marginLeft="7dp"
+	        android:layout_alignParentLeft="true"
+	        android:textStyle="bold"
+	        android:textSize="24sp"
+	        android:text="Fields" 
+	        />
+	    <ImageButton 
+				android:id="@+id/sidebar_butAddField"
+				android:layout_width="32dp"
+				android:layout_height="32dp"
+			    android:layout_alignParentRight="true"
+				android:layout_marginRight="7dp"
+				android:background="@drawable/edit"
+				/>
+    </RelativeLayout>
     
     <FrameLayout
-        android:id="@+id/slider_fragment_listNotes_container"
+        android:id="@+id/sidebar_fragment_listNotes_container"
         android:layout_width="match_parent"
-	    android:layout_height="0dp"
-	    android:layout_below="@+id/slider_layMenu"
-	    android:background="#D1D1D1"/>
+	    android:layout_height="match_parent"
+	    android:layout_below="@+id/sidebar_layMenuNotes"
+	    android:visibility="gone"/>
+    
+    <FrameLayout
+        android:id="@+id/sidebar_fragment_listFields_container"
+        android:layout_width="match_parent"
+	    android:layout_height="match_parent"
+	    android:layout_below="@+id/sidebar_layMenuFields"/>
     
 </RelativeLayout>
