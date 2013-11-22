@@ -1,0 +1,24 @@
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+       
+   
+    <ImageView 
+        android:id="@+id/fragment_image_viewer_image"
+	    android:layout_width="match_parent"
+	    android:layout_height="match_parent"
+	    android:scaleType="fitCenter"
+	    android:layout_marginLeft="7dp"
+	    android:layout_marginTop="7dp"
+        />    
+    <ImageButton 
+        android:id="@+id/fragment_image_viewer_done"
+	    android:layout_width="wrap_content"
+	    android:layout_height="wrap_content"
+	    android:layout_alignParentTop="true"
+	    android:layout_alignParentLeft="true"
+	    android:layout_marginLeft="7dp"
+	    android:src="@drawable/delete_vertex"
+        />
+        
+</RelativeLayout>

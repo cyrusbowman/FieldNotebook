@@ -106,6 +106,27 @@ public class MainActivity extends FragmentActivity implements OnClickListener,
 	private int drawingIsShowing = 0;
 
 
+	@Override
+	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+		Log.d(TAG, "onActivityResult:" + Integer.toString(requestCode));
+		if(requestCode == 999){
+			Log.d(TAG, "ImageCaptured");
+			//Camera
+			if(resultCode == RESULT_OK){
+				if(this.fragmentNoteList == null) this.getFragmentNoteList();
+				if(this.fragmentNoteList != null){
+					this.fragmentNoteList.ImageCaptured();
+				}
+			} else if(resultCode == RESULT_CANCELED){
+				Log.d(TAG, "ImageCanceled");
+			} else {
+				//Failed, TODO toast
+				Log.d(TAG, "ImageFailed");
+				Toast.makeText(getApplicationContext(), "Image capture failed", Toast.LENGTH_LONG).show();
+			}
+		}
+	}
+
 	private Field currentField = null;
 	private MyPolygon currentPolygon = null;
 

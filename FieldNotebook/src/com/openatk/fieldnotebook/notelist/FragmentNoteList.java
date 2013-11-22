@@ -1,11 +1,16 @@
 package com.openatk.fieldnotebook.notelist;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileChannel.MapMode;
 import java.util.List;
+import java.util.UUID;
 
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.GoogleMap.OnMapClickListener;
@@ -22,11 +27,16 @@ import com.openatk.fieldnotebook.ScrollAutoView;
 import com.openatk.fieldnotebook.FragmentDrawing.DrawingListener;
 import com.openatk.fieldnotebook.db.DatabaseHelper;
 import com.openatk.fieldnotebook.db.Field;
+import com.openatk.fieldnotebook.db.Image;
 import com.openatk.fieldnotebook.db.Note;
+import com.openatk.fieldnotebook.db.TableImages;
 import com.openatk.fieldnotebook.db.TableNotes;
 import com.openatk.fieldnotebook.drawing.MyMarker;
 import com.openatk.fieldnotebook.drawing.MyPolygon;
 import com.openatk.fieldnotebook.drawing.MyPolyline;
+import com.openatk.fieldnotebook.fieldlist.FragmentFieldList;
+import com.openatk.fieldnotebook.imageviewer.FragmentImageViewer;
+import com.openatk.fieldnotebook.imageviewer.ImageViewerListener;
 import com.openatk.fieldnotebook.slider.SliderListener;
 
 import android.annotation.TargetApi;
@@ -34,7 +44,9 @@ import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.ContentValues;
 import android.content.Context;
+import android.content.ContextWrapper;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.database.sqlite.SQLiteDatabase;
 import android.graphics.Bitmap;
 import android.graphics.Bitmap.Config;
@@ -46,28 +58,36 @@ import android.graphics.Paint;
 import android.graphics.Rect;
 import android.graphics.Paint.Align;
 import android.graphics.drawable.BitmapDrawable;
+import android.graphics.drawable.Drawable;
+import android.media.ThumbnailUtils;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Build.VERSION;
 import android.os.Build.VERSION_CODES;
 import android.os.Bundle;
+import android.os.Environment;
+import android.provider.MediaStore;
 import android.support.v4.app.Fragment;
+import android.support.v4.app.FragmentTransaction;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.ViewGroup;
 import android.view.inputmethod.InputMethodManager;
-import android.widget.Button;
 import android.widget.EditText;
+import android.widget.FrameLayout;
 import android.widget.HorizontalScrollView;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
-import android.widget.ScrollView;
 import android.widget.TextView;
+import android.widget.TableLayout.LayoutParams;
 
-public class FragmentNoteList extends Fragment implements OnClickListener, DrawingListener {
+public class FragmentNoteList extends Fragment implements OnClickListener, DrawingListener, ImageViewerListener {
+	private static String TAG = FragmentNoteList.class.getName();
+	
 	private FragmentDrawing fragmentDrawing = null;
 	private FragmentNoteList me = null;
 	private GoogleMap map;
@@ -95,6 +115,9 @@ public class FragmentNoteList extends Fragment implements OnClickListener, Drawi
 	private MyPolyline currentPolyline = null;
 	private MyMarker currentPoint = null;
 
+	private String imagePath = null;
+	private Image currentImage = null; //Current image for imageviewer
+	
 	@Override
 	public View onCreateView(LayoutInflater inflater, ViewGroup container,
 			Bundle savedInstanceState) {
@@ -342,6 +365,7 @@ public class FragmentNoteList extends Fragment implements OnClickListener, Drawi
 		}
 		
 		private OpenNoteView openNote(NoteView noteView){
+			svNotes.setScrollingEnabled(false);
 			svNotes.scrollToAfterAdd(noteView.me.getTop());
 			//Edit this note
 			int index = listNotes.indexOfChild(noteView.me);
@@ -376,6 +400,8 @@ public class FragmentNoteList extends Fragment implements OnClickListener, Drawi
 	private View inflateOpenNote(Note note){
 		View view = vi.inflate(R.layout.note_open, null);
 		final OpenNoteView noteView = new OpenNoteView();
+		noteView.layFullNote = (RelativeLayout) view.findViewById(R.id.note_open_note);
+		noteView.layImageView = (FrameLayout) view.findViewById(R.id.note_open_imageViewer);
 		noteView.layNote = (RelativeLayout) view.findViewById(R.id.note_open);
 		noteView.butDone = (ImageButton) view.findViewById(R.id.note_open_butDone);
 		noteView.butDelete = (ImageButton) view.findViewById(R.id.note_open_butDelete);
@@ -403,6 +429,28 @@ public class FragmentNoteList extends Fragment implements OnClickListener, Drawi
 			ImageView img = new ImageView(this.getActivity());
 			img.setBackgroundResource(R.drawable.point);
 			noteView.layObjects.addView(img);
+		}
+		
+		//Add images
+		List<Image> images = note.getImages();		
+		if(images != null){
+			Log.d("FragmentNoteList - inflateOpenNote", "Images not null : " + Integer.toString(images.size()));
+			for(int i=0; i<images.size(); i++){
+				ImageView img = new ImageView(this.getActivity());
+				Drawable d = new BitmapDrawable(this.getResources(), images.get(i).getThumb());
+				
+				img.setBackgroundDrawable(d);
+				img.setTag(images.get(i));
+				img.setOnClickListener(imageClickListener);
+				
+				float scale = getResources().getDisplayMetrics().density;
+				int dpAsPixels = (int) (7*scale + 0.5f); //Margin
+				LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+				layoutParams.setMargins(dpAsPixels, 0, dpAsPixels, 0);
+				noteView.layObjects.addView(img, layoutParams);
+			}
+		} else {
+			Log.d("FragmentNoteList - inflateOpenNote", "Images null");
 		}
 		
 		noteView.note = note;
@@ -439,6 +487,8 @@ public class FragmentNoteList extends Fragment implements OnClickListener, Drawi
 		public void onClick(View v) {
 			OpenNoteView noteView = (OpenNoteView) v.getTag();
 			if(v.getId() == R.id.note_open_butDone){
+				svNotes.setScrollingEnabled(true);
+
 				if(addingPolygon){
 					fragmentDrawing.setPolygonIcon(R.drawable.add_polygon);
 					listener.NoteListCompletePolygon();
@@ -475,8 +525,6 @@ public class FragmentNoteList extends Fragment implements OnClickListener, Drawi
 				//Hide drawing fragment
 				listener.NoteListHideDrawing();
 				fragmentDrawing = null;
-				
-				
 			} else if(v.getId() == R.id.note_open_butDelete){
 				
 			}
@@ -484,6 +532,8 @@ public class FragmentNoteList extends Fragment implements OnClickListener, Drawi
 	};
 	static class OpenNoteView
     {
+		RelativeLayout layFullNote;
+		FrameLayout layImageView;
 		ImageButton butDone;
 		ImageButton butDelete;
 		EditText etComment;
@@ -518,16 +568,39 @@ public class FragmentNoteList extends Fragment implements OnClickListener, Drawi
 		//Save the polylines
 		values.put(TableNotes.COL_POINTS, note.getStrMarkers());
 		Log.d("SaveNote", "StrPoints:" + note.getStrMarkers());
-		
+
 		//TODO more stuff
 		if(note.getId() == null){
 			//New note
-			database.insert(TableNotes.TABLE_NAME, null, values);
+			Integer newId = (int) database.insert(TableNotes.TABLE_NAME, null, values);
+			note.setId(newId);
 		} else {
 			//Editing note
 			String where = TableNotes.COL_ID + " = " + note.getId();
 			database.update(TableNotes.TABLE_NAME, values, where, null);
 		}
+		
+		List<Image> images = note.getImages();
+		if(images != null){
+			for(int i=0; i<images.size(); i++){
+				ContentValues values2 = new ContentValues();
+				Image image = images.get(i);
+				if(image.getId() == null){
+					//New image, need to save in database
+					ByteArrayOutputStream stream = new ByteArrayOutputStream();
+					image.getThumb().compress(Bitmap.CompressFormat.PNG, 100, stream);
+					byte[] byteArray = stream.toByteArray();
+					values2.put(TableImages.COL_IMAGE, byteArray);
+					values2.put(TableImages.COL_NOTE_ID, note.getId());
+					values2.put(TableImages.COL_PATH, image.getPath());
+					Integer newId = (int) database.insert(TableImages.TABLE_NAME, null, values2);
+					image.setId(newId);
+				}
+			}
+		} else {
+			Log.d("FragmentNoteList", "Images null");
+		}
+		
 		database.close();
 		dbHelper.close();
 	}
@@ -717,23 +790,91 @@ public class FragmentNoteList extends Fragment implements OnClickListener, Drawi
 
 	@Override
 	public void DrawingClickCamera() {
-		AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
-		builder.setTitle("Geotag Photo?");
-		builder.setMessage("Would you like to associate this picture with a point?")
-           .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
-               public void onClick(DialogInterface dialog, int id) {
-                   
-               }
-           })
-           .setNegativeButton("No", new DialogInterface.OnClickListener() {
-               public void onClick(DialogInterface dialog, int id) {
-                   
-               }
-           });
-		AlertDialog dialog = builder.create();
-		dialog.show();		
+        // path to /data/data/yourapp/app_data/imageDir
+		String file = UUID.randomUUID().toString() + ".jpg"; //Random filename
+		// Create imageDir
+        File f = new File(this.getActivity().getFilesDir(), file);
+        imagePath = f.getAbsolutePath();
+        //Create new file
+        FileOutputStream fos;
+		try {
+			fos = this.getActivity().openFileOutput(file, Context.MODE_WORLD_WRITEABLE);
+	        fos.close();
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+        //Get reference to the file
+        File newf = new File(this.getActivity().getFilesDir(), file);
+        
+        Uri outputFileUri = Uri.fromFile(newf);
+        Intent cameraIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE); 
+        cameraIntent.putExtra(MediaStore.EXTRA_OUTPUT, outputFileUri);
+        this.getActivity().startActivityForResult(cameraIntent, 999);
 	}
+	public void ImageCaptured(){
+		if(imagePath != null){
+			Log.d(TAG, "ImageCaptured");
+			Bitmap fullImage = BitmapFactory.decodeFile(imagePath);
+			Bitmap thumb = ThumbnailUtils.extractThumbnail(fullImage, 100, 100);
+			ImageView img = new ImageView(this.getActivity());
+			img.setOnClickListener(imageClickListener);
+			img.setTag(new Image(thumb, imagePath));
+			
+			float scale = getResources().getDisplayMetrics().density;
+			int dpAsPixels = (int) (7*scale + 0.5f); //Margin
+			LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+			layoutParams.setMargins(dpAsPixels, 0, dpAsPixels, 0);
+			
+			Drawable d = new BitmapDrawable(getResources(), thumb);
+			img.setBackgroundDrawable(d);			
+			this.currentOpenNoteView.layObjects.addView(img, layoutParams);
+			
+			//Save path and thumbnail in database
+			if(currentNote != null){
+				currentNote.addImage(thumb, imagePath);
+			}
+		}
+	}
+	private OnClickListener imageClickListener = new OnClickListener(){
+		@Override
+		public void onClick(View v) {
+			currentImage = (Image) v.getTag(); 
+			int height = currentOpenNoteView.layFullNote.getHeight();
+			currentOpenNoteView.layFullNote.setVisibility(View.GONE);
+			currentOpenNoteView.layImageView.setVisibility(View.VISIBLE);
+			//currentOpenNoteView.me.setBackgroundResource(R.drawable.note_image_viewer);
 
+			// Gets the layout params that will allow you to resize the layout
+			RelativeLayout.LayoutParams params = (RelativeLayout.LayoutParams) currentOpenNoteView.layImageView.getLayoutParams();
+			// Changes the height and width to the specified *pixels*
+			params.height = height;
+			currentOpenNoteView.layImageView.setLayoutParams(params);
+			
+			// Prepare a transaction to add fragments to this fragment
+			FragmentTransaction fragmentTransaction = getChildFragmentManager().beginTransaction();
+			// Add the list fragment to this fragment's layout
+			Log.i(TAG, "onCreate: adding FragmentNoteList to FragmentSidebar");
+			// Add the fragment to the this fragment's container layout
+			FragmentImageViewer fragmentImageViewer = new FragmentImageViewer();
+			fragmentTransaction.replace(currentOpenNoteView.layImageView.getId(), fragmentImageViewer, FragmentImageViewer.class.getName());
+			// Commit the transaction
+			fragmentTransaction.commit();
+		}
+	};
+	@Override
+	public void ImageViewerRequestData(FragmentImageViewer requester) {
+		if(this.currentNote != null){
+			requester.populateData(this.currentNote.getImages(), currentImage);
+		}
+	}
+	@Override
+	public void ImageViewerDone(Image image) {
+		currentOpenNoteView.layFullNote.setVisibility(View.VISIBLE);
+		currentOpenNoteView.layImageView.setVisibility(View.GONE);
+		//currentOpenNoteView.me.setBackgroundResource(R.drawable.note);
+	}
 	public Boolean AddNote() {
 		if(addingNote == false){
 			Log.d("FragmentNoteList", "AddNote");
@@ -799,5 +940,4 @@ public class FragmentNoteList extends Fragment implements OnClickListener, Drawi
 	    }
 	    return null;
 	}
-
 }
