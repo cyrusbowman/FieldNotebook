@@ -640,6 +640,7 @@ public class FragmentSlider extends Fragment implements OnClickListener, OnTouch
 				this.addingNote = true;
 				// Add a new note
 				Note newNote = new Note(currentField.getName());
+				currentNote = newNote;
 				notes.add(newNote);	
 				View newView = inflateOpenNote(newNote);
 				currentOpenNoteView = (OpenNoteView) newView.getTag();
@@ -843,6 +844,7 @@ public class FragmentSlider extends Fragment implements OnClickListener, OnTouch
 					Log.w("image",image.getAbsolutePath().toString());
 					
 					bitmap = BitmapFactory.decodeByteArray(xint.getThumbnail(),0,xint.getThumbnail().length);
+					bitmap=Bitmap.createScaledBitmap(bitmap, bitmap.getWidth()/2,bitmap.getHeight()/2, false);
 					float[] ltlng = new float[2];
 					xint.getLatLong(ltlng);
 //					LatLng picLoc = new LatLng(Double.parseDouble(xint.getAttribute(xint.TAG_GPS_LATITUDE)),Double.parseDouble(xint.getAttribute(xint.TAG_GPS_LONGITUDE)));
