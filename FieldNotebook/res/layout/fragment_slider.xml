@@ -5,7 +5,7 @@
     android:clickable="true"
     android:background="#D1D1D1">
     
-        <RelativeLayout
+    <RelativeLayout
         android:id="@+id/sidebar_layMenuNotes"
 	    android:layout_width="wrap_content"
 	    android:layout_height="wrap_content"
@@ -126,19 +126,18 @@
 				android:background="@drawable/edit"
 				/>
     </RelativeLayout>
-    </RelativeLayout>
-    
     
     <FrameLayout
-        android:id="@+id/slider_fragment_listFields_container"
+        android:id="@+id/sidebar_fragment_listNotes_container"
+        android:layout_width="match_parent"
+	    android:layout_height="match_parent"
+	    android:layout_below="@+id/sidebar_layMenuNotes"
+	    android:visibility="gone"/>
+    
+    <FrameLayout
+        android:id="@+id/sidebar_fragment_listFields_container"
         android:layout_width="match_parent"
 	    android:layout_height="match_parent"
 	    android:layout_below="@+id/sidebar_layMenuFields"/>
     
-    <FrameLayout
-        android:id="@+id/slider_fragment_listNotes_container"
-        android:layout_width="match_parent"
-	    android:layout_height="0dp"
-	    android:layout_below="@+id/slider_layMenu"
-	    android:background="#D1D1D1"/>
-    
+</RelativeLayout>

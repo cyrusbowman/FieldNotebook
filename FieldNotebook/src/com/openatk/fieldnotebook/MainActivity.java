@@ -59,12 +59,10 @@ import com.openatk.fieldnotebook.notelist.FragmentNoteList;
 import com.openatk.fieldnotebook.notelist.NoteListListener;
 import com.openatk.fieldnotebook.sidebar.FragmentSidebar;
 import com.openatk.fieldnotebook.sidebar.SidebarListener;
-import com.openatk.fieldnotebook.slider.FragmentSlider;
-import com.openatk.fieldnotebook.slider.SliderListener;
 
 public class MainActivity extends FragmentActivity implements OnClickListener,
 		OnMapClickListener, OnItemSelectedListener, OnMarkerClickListener, OnMarkerDragListener,
-		AddFieldListener, SliderListener, SidebarListener, NoteListListener, FieldListListener, MyPolygonListener {
+		AddFieldListener, SidebarListener, NoteListListener, FieldListListener, MyPolygonListener {
 	
 	private static String TAG = MainActivity.class.getName();
 	
@@ -86,8 +84,6 @@ public class MainActivity extends FragmentActivity implements OnClickListener,
 	private int sliderIsShowing = 0;
 	private int addIsShowing = 0;
 	private int drawingIsShowing = 0;
-	private int fieldListIsShowing = 0;
-
 
 	private Field currentField = null;
 	private MyPolygon currentPolygon = null;
@@ -97,7 +93,7 @@ public class MainActivity extends FragmentActivity implements OnClickListener,
 	String addingBoundary = "";
 	
 	FragmentAddField fragmentAddField = null;
-	FragmentSlider fragmentSlider = null;
+	FragmentSidebar fragmentSlider = null;
 	FragmentSidebar fragmentSidebar = null;
 	FragmentDrawing fragmentDrawing = null;
 	FragmentNoteList fragmentNoteList = null;
@@ -122,7 +118,7 @@ public class MainActivity extends FragmentActivity implements OnClickListener,
 		
 		FragmentManager fm = getSupportFragmentManager();
 		fragmentMap = (SupportMapFragment) fm.findFragmentById(R.id.map);
-		fragmentSlider = (FragmentSlider) fm.findFragmentByTag(FragmentSlider.class.getName());
+		fragmentSlider = (FragmentSidebar) fm.findFragmentByTag(FragmentSidebar.class.getName());
 		if(fragmentSlider != null){
 			sliderIsShowing = 1;
 		}
@@ -683,12 +679,12 @@ public class MainActivity extends FragmentActivity implements OnClickListener,
 				params.height = RelativeLayout.LayoutParams.WRAP_CONTENT;
 				layout.setLayoutParams(params);
 				FragmentManager fm = getSupportFragmentManager();
-				this.fragmentSlider = new FragmentSlider();
+				this.fragmentSlider = new FragmentSidebar();
 				FragmentTransaction ft = fm.beginTransaction();
 				if (transition) ft.setCustomAnimations(R.anim.slide_up, R.anim.slide_down);
-				ft.add(R.id.fragment_container_slider, this.fragmentSlider, FragmentSlider.class.getName());
+				ft.add(R.id.fragment_container_slider, this.fragmentSlider, FragmentSidebar.class.getName());
 				ft.commit();
-				Log.d("MainActivity", "Showing Slider:" + FragmentSlider.class.getName());
+				Log.d("MainActivity", "Showing Slider:" + FragmentSidebar.class.getName());
 			}
 		}
 		this.invalidateOptionsMenu();
@@ -704,7 +700,7 @@ public class MainActivity extends FragmentActivity implements OnClickListener,
 			if(fragmentNoteList != null) fragmentNoteList.onClose();
 			
 			FragmentManager fm = getSupportFragmentManager();
-			FragmentSlider fragment = (FragmentSlider) fm.findFragmentByTag(FragmentSlider.class.getName());
+			FragmentSidebar fragment = (FragmentSidebar) fm.findFragmentByTag(FragmentSidebar.class.getName());
 			// Set height so transition works TODO 3 different heights?? Get from fragment, fragment.getMyHeight?
 			FrameLayout layout = (FrameLayout) findViewById(R.id.fragment_container_slider);
 			if(layout != null){
@@ -1053,9 +1049,9 @@ public class MainActivity extends FragmentActivity implements OnClickListener,
 	
 	// ----------------------------- FragmentSlider -------------------------------
 
-	private FragmentSlider getFragmentSlider(){
+	private FragmentSidebar getFragmentSlider(){
 		FragmentManager fm = getSupportFragmentManager();
-		return (FragmentSlider) fm.findFragmentByTag(FragmentSlider.class.getName());
+		return (FragmentSidebar) fm.findFragmentByTag(FragmentSidebar.class.getName());
 	}
 
 	@Override
@@ -1120,7 +1116,7 @@ public class MainActivity extends FragmentActivity implements OnClickListener,
 	}
 
 	@Override
-	public void SliderRequestData(FragmentSlider requester) {
+	public void SliderRequestData(FragmentSidebar requester) {
 		if(requester != null) this.fragmentSlider = requester;
 		if(this.fragmentSlider == null){
 			this.fragmentSlider = this.getFragmentSlider();
@@ -1221,19 +1217,5 @@ public class MainActivity extends FragmentActivity implements OnClickListener,
 		this.SidebarRequestData(null);
 		this.NoteListRequestData(null); //Populate notes again
 	}
-
-	@Override
-	public void SliderBackToFieldsList() {
-		// TODO Auto-generated method stub
-		
-	}
-
-	@Override
-	public void SliderAddField() {
-		// TODO Auto-generated method stub
-		
-	}
-
-
 }
 

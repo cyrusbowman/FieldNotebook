@@ -22,7 +22,7 @@ import com.openatk.fieldnotebook.db.TableNotes;
 import com.openatk.fieldnotebook.drawing.MyMarker;
 import com.openatk.fieldnotebook.drawing.MyPolygon;
 import com.openatk.fieldnotebook.drawing.MyPolyline;
-import com.openatk.fieldnotebook.slider.SliderListener;
+import com.openatk.fieldnotebook.sidebar.SidebarListener;
 
 import android.app.Activity;
 import android.app.AlertDialog;
