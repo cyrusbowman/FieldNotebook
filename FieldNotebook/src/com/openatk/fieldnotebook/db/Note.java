@@ -6,6 +6,7 @@ import java.util.StringTokenizer;
 
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
+import android.graphics.Bitmap;
 import android.graphics.Color;
 
 import com.google.android.gms.maps.model.LatLng;
@@ -34,7 +35,8 @@ public class Note {
 	
 	private String strMarkers = null;
 	private List<MyMarker> myMarkers = new ArrayList<MyMarker>();
-	
+	private List<Image> images = new ArrayList<Image>();
+
 	
 	//private List<MyLine> lines;
 	//private List<MyPoint> points;
@@ -47,6 +49,11 @@ public class Note {
 	}
 	public Note(String fieldName){
 		this.fieldName = fieldName;
+	}
+	
+	public void addImage(Bitmap thumb, String path){
+		Image newImage = new Image(thumb, path);
+		this.images.add(newImage);
 	}
 	
 	public void addMyPolygon(MyPolygon polygon){
@@ -261,6 +268,12 @@ public class Note {
 	public Integer getDeleted() {
 		return deleted;
 	}
+	public List<Image> getImages(){
+		return this.images;
+	}
+	public  void setImages(List<Image> images){
+		this.images = images;
+	}
 	public void setId(Integer id) {
 		this.id = id;
 	}
@@ -314,6 +327,9 @@ public class Note {
 	}
 		
 	public static Note cursorToNote(Cursor cursor){
+		return cursorToNote(cursor, null);
+	}
+	public static Note cursorToNote(Cursor cursor, SQLiteDatabase database){
 		if(cursor != null){
 			Note note = new Note();
 			note.setId(cursor.getInt(cursor.getColumnIndex(TableNotes.COL_ID)));
@@ -328,6 +344,9 @@ public class Note {
 			note.setColor(cursor.getInt(cursor.getColumnIndex(TableNotes.COL_COLOR)));
 			note.setVisible(cursor.getInt(cursor.getColumnIndex(TableNotes.COL_VISIBLE)));
 			note.setDeleted(cursor.getInt(cursor.getColumnIndex(TableNotes.COL_DELETED)));
+			if(database != null){
+				note.setImages(Image.FindImagesByNoteId(database, note.getId()));
+			}
 			return note;
 		} else {
 			return null;
@@ -341,7 +360,7 @@ public class Note {
 			String where = TableNotes.COL_FIELD_NAME + " = '" + fieldName + "' AND " + TableFields.COL_DELETED + " = 0";;
 			Cursor cursor = database.query(TableNotes.TABLE_NAME,TableNotes.COLUMNS, where, null, null, null, null);
 			while(cursor.moveToNext()) {
-				notes.add(Note.cursorToNote(cursor));
+				notes.add(Note.cursorToNote(cursor, database));
 			}
 			cursor.close();
 			return notes;
