@@ -47,7 +47,6 @@ public class FragmentSidebar extends Fragment implements OnClickListener, OnTouc
 	private Field currentField = null;
 	private View container = null;
 	
-	
 	private Boolean initialCreate;
 	private ViewGroup noteListContainer;
 	private ViewGroup fieldListContainer;
@@ -94,9 +93,15 @@ public class FragmentSidebar extends Fragment implements OnClickListener, OnTouc
 			initialCreate = false;
 			// Prepare a transaction to add fragments to this fragment
 			FragmentTransaction fragmentTransaction = getChildFragmentManager().beginTransaction();
-
+			Log.w("fragtrans", fragmentTransaction.toString());
 			// Add the list fragment to this fragment's layout
+			Log.w("fieldListContainer", Boolean.toString(fieldListContainer == null));
+			Log.w("fragmentFieldList", Boolean.toString(fragmentFieldList == null));
+			Log.w("noteListContainer", Boolean.toString(noteListContainer == null));
+			Log.w("fragmentNoteList", Boolean.toString(fragmentNoteList == null));
+
 			if (fieldListContainer != null) {
+				
 				Log.i(TAG, "onCreate: adding FragmentFieldList to FragmentSidebar");
 				// Add the fragment to the this fragment's container layout
 				fragmentFieldList = new FragmentFieldList();
@@ -108,28 +113,29 @@ public class FragmentSidebar extends Fragment implements OnClickListener, OnTouc
 				fragmentNoteList = new FragmentNoteList();
 				fragmentTransaction.replace(noteListContainer.getId(), fragmentNoteList, FragmentNoteList.class.getName());
 			}
+			Log.w("fragtrans", fragmentTransaction.toString());
 			// Commit the transaction
 			fragmentTransaction.commit();
 		}
 				
 		// If this is the first creation of the fragment, add child fragments
-		if (initialCreate) {
-			initialCreate = false;
-			// Prepare a transaction to add fragments to this fragment
-			FragmentTransaction fragmentTransaction = getChildFragmentManager().beginTransaction();
-
-			// Add the list fragment to this fragment's layout
-			noteListContainer = (ViewGroup) view.findViewById(R.id.sidebar_fragment_listNotes_container);
-			if (noteListContainer != null) {
-				Log.i(TAG, "onCreate: adding FragmentNoteList to Fragmentsidebar");
-
-				// Add the fragment to the this fragment's container layout
-				fragmentNoteList = new FragmentNoteList();
-				fragmentTransaction.replace(noteListContainer.getId(), fragmentNoteList, FragmentNoteList.class.getName());
-			}
-			// Commit the transaction
-			fragmentTransaction.commit();
-		}
+//		if (initialCreate) {
+//			initialCreate = false;
+//			// Prepare a transaction to add fragments to this fragment
+//			FragmentTransaction fragmentTransaction = getChildFragmentManager().beginTransaction();
+//
+//			// Add the list fragment to this fragment's layout
+//			noteListContainer = (ViewGroup) view.findViewById(R.id.sidebar_fragment_listNotes_container);
+//			if (noteListContainer != null) {
+//				Log.i(TAG, "onCreate: adding FragmentNoteList to Fragmentsidebar");
+//
+//				// Add the fragment to the this fragment's container layout
+//				fragmentNoteList = new FragmentNoteList();
+//				fragmentTransaction.replace(noteListContainer.getId(), fragmentNoteList, FragmentNoteList.class.getName());
+//			}
+//			// Commit the transaction
+//			fragmentTransaction.commit();
+//		}
 		
 		return view;
 	}

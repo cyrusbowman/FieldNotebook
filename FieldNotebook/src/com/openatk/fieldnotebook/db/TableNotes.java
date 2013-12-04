@@ -15,13 +15,14 @@ public class TableNotes {
 	public static final String COL_POLYGONS = "polygons";
 	public static final String COL_LINES = "lines";
 	public static final String COL_POINTS = "points";
+	public static final String COL_IMAGEPOINTS = "imagepoints";
 	public static final String COL_COLOR = "color";
 	public static final String COL_VISIBLE = "visible";
 	public static final String COL_DELETED = "deleted";
 
 	public static String[] COLUMNS = { COL_ID, COL_REMOTE_ID, COL_HAS_CHANGED, 
 										COL_DATE_CHANGED, COL_FIELD_NAME, COL_COMMENT, COL_POLYGONS, 
-										COL_LINES, COL_POINTS, COL_COLOR, COL_VISIBLE, COL_DELETED };
+										COL_LINES, COL_POINTS, COL_IMAGEPOINTS, COL_COLOR, COL_VISIBLE, COL_DELETED };
 	
 	// Database creation SQL statement
 	private static final String DATABASE_CREATE = "create table " 
@@ -36,6 +37,7 @@ public class TableNotes {
 	      + COL_POLYGONS + " text,"
 	      + COL_LINES + " text,"
 	      + COL_POINTS + " text,"
+	      + COL_IMAGEPOINTS + " text,"
 	      + COL_COLOR + " integer,"
 	      + COL_VISIBLE + " integer default 1,"
 	      + COL_DELETED + " integer default 0"

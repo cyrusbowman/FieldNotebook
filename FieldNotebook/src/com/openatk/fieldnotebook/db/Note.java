@@ -10,6 +10,7 @@ import android.graphics.Bitmap;
 import android.graphics.Color;
 
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.PolygonOptions;
 import com.google.android.gms.maps.model.PolylineOptions;
@@ -34,8 +35,10 @@ public class Note {
 	private List<PolylineOptions> polylines = null;
 	
 	private String strMarkers = null;
+	private String strImageMarkers;
 	private List<MyMarker> myMarkers = new ArrayList<MyMarker>();
 	private List<Image> images = new ArrayList<Image>();
+	private List<Marker> imageMarkers = new ArrayList<Marker>();
 
 	
 	//private List<MyLine> lines;
@@ -127,6 +130,9 @@ public class Note {
 	public void addMyMarker(MyMarker marker){
 		this.myMarkers.add(marker);
 	}
+	public void addImageMarker(Marker imageMarker) {
+		this.imageMarkers.add(imageMarker);
+	}
 	public void myMarkersToStringMarkers(){
 		StringBuilder build = new StringBuilder();		
 		for(int i=0; i<myMarkers.size(); i++){
@@ -149,6 +155,31 @@ public class Note {
 			myMarkers.get(i).remove();
 		}
 	}
+	
+	public void imageMarkersToStringImageMarkers(){
+		StringBuilder build = new StringBuilder();		
+		for(int i=0; i<imageMarkers.size(); i++){
+			LatLng point = imageMarkers.get(i).getPosition();
+			if(point != null){
+				// Generate boundary
+				build.append(point.latitude);
+				build.append(",");
+				build.append(point.longitude);
+				build.append(",");
+			}
+		}
+		if(build.length() > 0){
+			build.deleteCharAt(build.length() - 1);
+		}
+		this.strImageMarkers = build.toString();
+	}
+	
+	public void removeImageMarkers(){
+		for(int i=0; i<imageMarkers.size(); i++){
+			imageMarkers.get(i).remove();
+		}
+	}
+	
 	public void removeMarker(MyMarker it){
 		myMarkers.remove(it);
 	}
@@ -235,6 +266,9 @@ public class Note {
 		return this.myPolylines;
 	}
 	
+	public String getStrImageMarkers() {
+		return this.strImageMarkers;
+	}
 	
 	public String getStrMarkers() {
 		return this.strMarkers;
@@ -243,6 +277,22 @@ public class Note {
 		//Convert strPolygons to polygons
 		List<MarkerOptions> markers = new ArrayList<MarkerOptions>();
 		String all = this.getStrMarkers();
+		if(all != null){
+			StringTokenizer tokensPoints = new StringTokenizer(all, ",");
+			while (tokensPoints.hasMoreTokens()) {
+				MarkerOptions options = new MarkerOptions();
+				String lat = tokensPoints.nextToken();
+				String lng = tokensPoints.nextToken();
+				options.position(new LatLng(Double.parseDouble(lat), Double.parseDouble(lng)));
+				markers.add(options);
+			}
+		}
+		return markers;
+	}
+	public List<MarkerOptions> getImageMarkers() {
+		//Convert strPolygons to polygons
+		List<MarkerOptions> markers = new ArrayList<MarkerOptions>();
+		String all = this.getStrImageMarkers();
 		if(all != null){
 			StringTokenizer tokensPoints = new StringTokenizer(all, ",");
 			while (tokensPoints.hasMoreTokens()) {
@@ -307,6 +357,9 @@ public class Note {
 	public void setStrMarkers(String str) {
 		this.strMarkers = str;
 	}
+	public void setStrImageMarkers(String str) {
+		this.strImageMarkers = str;
+	}
 	public void setColor(Integer color) {
 		for(int i=0; i<this.myPolygons.size(); i++){
 			this.myPolygons.get(i).setFillColor(Color.argb(Color.alpha(color) - 150, Color.red(color), Color.green(color), Color.blue(color)));
@@ -341,6 +394,7 @@ public class Note {
 			note.setStrPolygons(cursor.getString(cursor.getColumnIndex(TableNotes.COL_POLYGONS)));
 			note.setStrPolylines(cursor.getString(cursor.getColumnIndex(TableNotes.COL_LINES)));
 			note.setStrMarkers(cursor.getString(cursor.getColumnIndex(TableNotes.COL_POINTS)));
+			note.setStrMarkers(cursor.getString(cursor.getColumnIndex(TableNotes.COL_IMAGEPOINTS)));
 			note.setColor(cursor.getInt(cursor.getColumnIndex(TableNotes.COL_COLOR)));
 			note.setVisible(cursor.getInt(cursor.getColumnIndex(TableNotes.COL_VISIBLE)));
 			note.setDeleted(cursor.getInt(cursor.getColumnIndex(TableNotes.COL_DELETED)));

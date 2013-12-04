@@ -18,7 +18,10 @@ import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.GoogleMap.OnMapClickListener;
 import com.google.android.gms.maps.GoogleMap.OnMarkerClickListener;
 import com.google.android.gms.maps.GoogleMap.OnMarkerDragListener;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.LatLngBounds;
+import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.Polygon;
 import com.google.android.gms.maps.model.PolygonOptions;
@@ -31,6 +34,7 @@ import com.openatk.fieldnotebook.db.DatabaseHelper;
 import com.openatk.fieldnotebook.db.Field;
 import com.openatk.fieldnotebook.db.Image;
 import com.openatk.fieldnotebook.db.Note;
+import com.openatk.fieldnotebook.db.TableFields;
 import com.openatk.fieldnotebook.db.TableImages;
 import com.openatk.fieldnotebook.db.TableNotes;
 import com.openatk.fieldnotebook.drawing.MyMarker;
@@ -58,12 +62,14 @@ import android.graphics.Paint.Align;
 import android.graphics.Rect;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
+import android.media.ExifInterface;
 import android.media.ThumbnailUtils;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Build.VERSION;
 import android.os.Build.VERSION_CODES;
 import android.os.Bundle;
+import android.os.Environment;
 import android.provider.MediaStore;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentTransaction;
@@ -85,7 +91,7 @@ import android.widget.TableLayout.LayoutParams;
 
 public class FragmentNoteList extends Fragment implements OnClickListener, DrawingListener, ImageViewerListener {
 	private static String TAG = FragmentNoteList.class.getName();
-	
+
 	private FragmentDrawing fragmentDrawing = null;
 
 	private FragmentNoteList me = null;
@@ -93,7 +99,7 @@ public class FragmentNoteList extends Fragment implements OnClickListener, Drawi
 
 	private ScrollAutoView svNotes;
 	private LinearLayout listNotes;
-	
+
 	private NoteListListener listener;
 	private Field currentField = null;
 	private List<Note> notes = null;
@@ -102,6 +108,7 @@ public class FragmentNoteList extends Fragment implements OnClickListener, Drawi
 	private Note currentNote = null;
 	OpenNoteView currentOpenNoteView = null;
 	private RelativeLayout currentNoteView = null;
+	private Bitmap imageBitmap;
 	private Bitmap bitmap;
 	private File image;
 
@@ -112,13 +119,13 @@ public class FragmentNoteList extends Fragment implements OnClickListener, Drawi
 	private Boolean addingPoint = false;
 
 	private Boolean addingNote = false;  //Or editing note
-	
+
 	private MyPolyline currentPolyline = null;
 	private MyMarker currentPoint = null;
 
 	private String imagePath = null;
 	private Image currentImage = null; //Current image for imageviewer
-	
+
 	@Override
 	public View onCreateView(LayoutInflater inflater, ViewGroup container,
 			Bundle savedInstanceState) {
@@ -126,10 +133,10 @@ public class FragmentNoteList extends Fragment implements OnClickListener, Drawi
 				false);
 
 		me = this;
-		
+
 		svNotes = (ScrollAutoView) view.findViewById(R.id.note_list_scrollView);
 		listNotes = (LinearLayout) view.findViewById(R.id.note_list_listNotes);
-		
+
 		dbHelper = new DatabaseHelper(this.getActivity());
 		vi = (LayoutInflater) this.getActivity().getApplicationContext().getSystemService(Context.LAYOUT_INFLATER_SERVICE);
 		return view;
@@ -138,7 +145,7 @@ public class FragmentNoteList extends Fragment implements OnClickListener, Drawi
 	@Override
 	public void onAttach(Activity activity) {
 		super.onAttach(activity);
-		
+
 		Fragment parentFragment = getParentFragment();
 		if (parentFragment != null && parentFragment instanceof NoteListListener) {
 			// Check if parent fragment (if there is one) is listener
@@ -159,7 +166,7 @@ public class FragmentNoteList extends Fragment implements OnClickListener, Drawi
 		}
 		Log.d("FragmentNoteList", "Attached");
 	}
-	
+
 	@Override
 	public void onActivityCreated(Bundle savedInstanceState) {
 		super.onActivityCreated(savedInstanceState);
@@ -177,8 +184,7 @@ public class FragmentNoteList extends Fragment implements OnClickListener, Drawi
 		// Get current field
 		currentField = null;
 		if (currentFieldId != null) {
-			currentField = Field.FindFieldById(dbHelper.getReadableDatabase(),
-					currentFieldId);
+			currentField = Field.FindFieldById(dbHelper.getReadableDatabase(), currentFieldId);
 			dbHelper.close();
 		}
 		if (currentField != null) {
@@ -190,14 +196,22 @@ public class FragmentNoteList extends Fragment implements OnClickListener, Drawi
 				// Add note to list
 				listNotes.addView(inflateNote(notes.get(i)));
 			}
+			Log.w("currentNote", Boolean.toString(currentNote == null));
+			if (currentNote !=null) {
+				View newView = inflateOpenNote(currentNote);
+				currentOpenNoteView = (OpenNoteView) newView.getTag();
+
+				//Show drawing fragment
+				fragmentDrawing = listener.NoteListShowDrawing();
+				fragmentDrawing.setListener(me);
+			}
 		} else {
 			notes = null;
 		}
 	}
-		
+
 	public void finishPolygon(MyPolygon newPolygon){
 		if(currentNote != null){
-			//TODO handle edit finish? Maybe not, i think i removed on edit?
 			newPolygon.setStrokeColor(Field.STROKE_COLOR);
 			currentNote.addMyPolygon(newPolygon); // Adds a mypolygon
 		}
@@ -221,35 +235,35 @@ public class FragmentNoteList extends Fragment implements OnClickListener, Drawi
 
 		noteView.tvComment.setText(note.getComment());
 
-		
+
 		noteView.tvComment.setTag(noteView);
 
 		noteView.butShowHide.setTag(noteView);
 		noteView.layNote.setTag(noteView);
-		
+
 		noteView.tvComment.setOnClickListener(noteClickListener);
 		noteView.butShowHide.setOnClickListener(noteClickListener);
 		noteView.layNote.setOnClickListener(noteClickListener);
-		
+
 		if(note.getVisible() == 1){
 			noteView.butShowHide.setImageResource(R.drawable.note_but_hide);
 		} else {
 			noteView.butShowHide.setImageResource(R.drawable.note_but_show);
 		}
-		
+
 		Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
 		paint.setColor(Color.BLACK);
 		paint.setShadowLayer(2f, 0f, 2f, Color.LTGRAY);
 		paint.setTextAlign(Align.RIGHT);
 		paint.setTextSize(20);
 		paint.setStrokeWidth(20);
-		
-		
-		
-		//Bitmap.Config conf = Bitmap.Config.ARGB_8888;
-		//Bitmap bitmap = Bitmap.createBitmap(bounds.width() + 5, bounds.height(), conf); //TODO create blank new bitmap
 
-		
+
+
+		//Bitmap.Config conf = Bitmap.Config.ARGB_8888;
+		//Bitmap bitmap = Bitmap.createBitmap(bounds.width() + 5, bounds.height(), conf);
+
+
 		//Add polygons from note to map
 		List<MyPolygon> myPolygons = note.getMyPolygons();
 		if(myPolygons.isEmpty()){
@@ -267,7 +281,7 @@ public class FragmentNoteList extends Fragment implements OnClickListener, Drawi
 		List<MyPolyline> myPolylines = note.getMyPolylines();
 		if (myPolylines.isEmpty()) {
 			List<PolylineOptions> polylines = note.getPolylines(); // Gets map
-																	// polygons
+			// polygons
 			for (int i = 0; i < polylines.size(); i++) {
 				note.addMyPolyline(new MyPolyline(map.addPolyline(polylines
 						.get(i)), map)); // Adds back my polygons
@@ -289,9 +303,30 @@ public class FragmentNoteList extends Fragment implements OnClickListener, Drawi
 				myMarkers.get(i).unselect();
 			}
 		}
+		//Add Images as Markers with icons
+		List<Image> images = note.getImages();
+		for (int i = 0; i < images.size(); i++) {
+			try {
+				ExifInterface exifInt = new ExifInterface(images.get(i).getPath());
+				imageBitmap = BitmapFactory.decodeByteArray(exifInt.getThumbnail(),0,exifInt.getThumbnail().length);
+				imageBitmap = Bitmap.createScaledBitmap(imageBitmap, imageBitmap.getWidth()/2,imageBitmap.getHeight()/2, false);
+				float[] ltlng = new float[2];
+				exifInt.getLatLong(ltlng);
+				LatLng picLoc = new LatLng(ltlng[0],ltlng[1]);
+				Log.w("bitmap null", Boolean.toString(imageBitmap == null));
+				Log.w("bitmap descriptor", Boolean.toString(BitmapDescriptorFactory.fromBitmap(imageBitmap) == null));
+//				map.addMarker(new MarkerOptions().position(picLoc).icon(BitmapDescriptorFactory.fromBitmap(imageBitmap)));
+				note.addImageMarker(map.addMarker(new MarkerOptions().position(picLoc).icon(BitmapDescriptorFactory.fromBitmap(imageBitmap))));
+//				note.addMyMarker(new MyMarker(marker, map));
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+
+		}
+		
 		note.setColor(note.getColor());
 		noteView.imgColor.setBackgroundColor(note.getColor());
-		
+
 
 		//Show icon and draw number on icon
 		Integer numberOfPolygons = note.getMyPolygons().size();
@@ -342,8 +377,6 @@ public class FragmentNoteList extends Fragment implements OnClickListener, Drawi
 			BitmapDrawable ob = new BitmapDrawable(getResources(), bitmap);
 			noteView.imgPoints.setBackgroundDrawable(ob);
 		}
-		
-
 		noteView.me = view;
 		view.setTag(noteView);
 		return view;
@@ -356,7 +389,7 @@ public class FragmentNoteList extends Fragment implements OnClickListener, Drawi
 		public void onClick(View v) {
 			NoteView noteView = (NoteView) v.getTag();
 			if(v.getId() == R.id.note_butShowHide){
-				
+
 			} else if(v.getId() == R.id.note_txtComment){ 
 				if(addingNote == false){
 					addingNote = true;
@@ -365,9 +398,9 @@ public class FragmentNoteList extends Fragment implements OnClickListener, Drawi
 					newView.etComment.requestFocus();
 					//Show keyboard
 					InputMethodManager inputMethodManager = (InputMethodManager) me.getActivity().getSystemService(Context.INPUT_METHOD_SERVICE);
-				    if (inputMethodManager != null) {
-				        inputMethodManager.toggleSoftInput(InputMethodManager.SHOW_FORCED, 0);
-				    }
+					if (inputMethodManager != null) {
+						inputMethodManager.toggleSoftInput(InputMethodManager.SHOW_FORCED, 0);
+					}
 				}
 			} else if(v.getId() == R.id.note){
 				if(addingNote == false){
@@ -380,7 +413,7 @@ public class FragmentNoteList extends Fragment implements OnClickListener, Drawi
 			}
 
 		}
-		
+
 		private OpenNoteView openNote(NoteView noteView){
 			svNotes.setScrollingEnabled(false);
 			svNotes.scrollToAfterAdd(noteView.me.getTop());
@@ -399,9 +432,9 @@ public class FragmentNoteList extends Fragment implements OnClickListener, Drawi
 		}
 	};
 
-	
+
 	static class NoteView
-    {
+	{
 		ImageView imgColor;
 		ImageButton butShowHide;
 		TextView tvComment;
@@ -414,8 +447,8 @@ public class FragmentNoteList extends Fragment implements OnClickListener, Drawi
 		Note note;
 		View me;
 
-    }
-	
+	}
+
 	private View inflateOpenNote(Note note){
 
 		View view = vi.inflate(R.layout.note_open, null);
@@ -430,11 +463,11 @@ public class FragmentNoteList extends Fragment implements OnClickListener, Drawi
 		noteView.svObjects = (HorizontalScrollView) view.findViewById(R.id.note_open_sv_objects);
 
 		noteView.etComment.setText(note.getComment());
-		
+
 		List<MyPolygon> polygons = note.getMyPolygons();
 		List<MyPolyline> polylines = note.getMyPolylines();
 		List<MyMarker> markers = note.getMyMarkers();
-		
+
 		for(int i=0; i<polygons.size(); i++){
 			ImageView img = new ImageView(this.getActivity());
 			img.setBackgroundResource(R.drawable.polygon);
@@ -450,7 +483,7 @@ public class FragmentNoteList extends Fragment implements OnClickListener, Drawi
 			img.setBackgroundResource(R.drawable.point);
 			noteView.layObjects.addView(img);
 		}
-		
+
 		//Add images
 		List<Image> images = note.getImages();		
 		if(images != null){
@@ -458,11 +491,10 @@ public class FragmentNoteList extends Fragment implements OnClickListener, Drawi
 			for(int i=0; i<images.size(); i++){
 				ImageView img = new ImageView(this.getActivity());
 				Drawable d = new BitmapDrawable(this.getResources(), images.get(i).getThumb());
-				
 				img.setBackgroundDrawable(d);
 				img.setTag(images.get(i));
 				img.setOnClickListener(imageClickListener);
-				
+
 				float scale = getResources().getDisplayMetrics().density;
 				int dpAsPixels = (int) (7*scale + 0.5f); //Margin
 				LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
@@ -472,7 +504,7 @@ public class FragmentNoteList extends Fragment implements OnClickListener, Drawi
 		} else {
 			Log.d("FragmentNoteList - inflateOpenNote", "Images null");
 		}
-		
+
 		noteView.note = note;
 
 		/*noteView.etComment.setImeActionLabel("Done", KeyEvent.KEYCODE_ENTER);
@@ -490,8 +522,8 @@ public class FragmentNoteList extends Fragment implements OnClickListener, Drawi
 		        return false;
 		    }
 		});*/
-		
-	
+
+
 		noteView.butDone.setTag(noteView);
 		noteView.butDelete.setTag(noteView);
 		noteView.butDone.setOnClickListener(openNoteClickListener);
@@ -508,7 +540,7 @@ public class FragmentNoteList extends Fragment implements OnClickListener, Drawi
 				.getExternalStoragePublicDirectory(
 						Environment.DIRECTORY_PICTURES).toString());
 		String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss")
-				.format(new Date());
+		.format(new Date());
 		String imageFileName = "IMG_" + timeStamp + "_";
 		image = File.createTempFile(imageFileName, ".jpg", storageDir);
 		Log.w("createimagefile", Boolean.toString(image == null));
@@ -546,20 +578,17 @@ public class FragmentNoteList extends Fragment implements OnClickListener, Drawi
 					map.setOnMarkerDragListener((OnMarkerDragListener) listener);
 
 					if (currentNote != null) {
-						// TODO handle edit finish? Maybe not, i think i removed
-						// on edit?
 						currentPolyline.setColor(Field.STROKE_COLOR);
 						currentNote.addMyPolyline(currentPolyline); // Adds a
-																	// myPolyline
 					}
 					fragmentDrawing.setPolylineIcon(R.drawable.add_line_v1);
 					addingPolygon = false;
 				}
-				
+
 				// hide virtual keyboard
-		        InputMethodManager imm =  (InputMethodManager)getActivity().getApplicationContext().getSystemService(Context.INPUT_METHOD_SERVICE);
-		        imm.hideSoftInputFromWindow(noteView.etComment.getWindowToken(), 0);
-		        
+				InputMethodManager imm =  (InputMethodManager)getActivity().getApplicationContext().getSystemService(Context.INPUT_METHOD_SERVICE);
+				imm.hideSoftInputFromWindow(noteView.etComment.getWindowToken(), 0);
+
 				//Save the note
 				currentNote.setComment(noteView.etComment.getText().toString());
 				SaveNote(currentNote);
@@ -568,17 +597,17 @@ public class FragmentNoteList extends Fragment implements OnClickListener, Drawi
 				listNotes.removeView(noteView.me);
 				listNotes.addView(inflateNote(currentNote), index);
 
-				
+
 				//Hide drawing fragment
 				listener.NoteListHideDrawing();
 				fragmentDrawing = null;
 			} else if(v.getId() == R.id.note_open_butDelete){
-				
+
 			}
 		}
 	};
 	static class OpenNoteView
-    {
+	{
 		RelativeLayout layFullNote;
 		FrameLayout layImageView;
 		ImageButton butDone;
@@ -601,14 +630,45 @@ public class FragmentNoteList extends Fragment implements OnClickListener, Drawi
 		values.put(TableNotes.COL_FIELD_NAME,note.getFieldName());
 		values.put(TableNotes.COL_COLOR,note.getColor());
 
-		//Save current my polygons to strpolygons
-<<<<<<< HEAD
-
-		// Iaman and Patrick added this for demo 2
-
+		LatLngBounds.Builder builder = new LatLngBounds.Builder();
+		List<Note> allNotes = Note.FindNotesByFieldName(dbHelper.getReadableDatabase(), note.getFieldName());
+		for (int z = 0; z < allNotes.size(); z++) {
+			Note aNote = allNotes.get(z);
+			if(aNote.getId() != note.getId()) {
+				// Get all the polygons, add their vertices to the bounding box
+				List<PolygonOptions> listPolygons = aNote.getPolygons();
+				Log.w("ListPolygons is empty:", Boolean.toString(listPolygons.isEmpty()) + " " + note.getComment());
+				for (int i = 0; i < listPolygons.size(); i++) {
+					List<LatLng> points = listPolygons.get(i).getPoints();
+					for (int j = 0; j < points.size(); j++) {
+						builder.include(points.get(j));
+					}
+				}
+	
+				// Do the same thing with the polylines
+				List<PolylineOptions> listPolyline = aNote.getPolylines();
+				for (int p = 0; p < listPolyline.size(); p++) {
+					List<LatLng> points = listPolyline.get(p).getPoints();
+					for (int u = 0; u < points.size(); u++) {
+						builder.include(points.get(u));
+					}
+				}
+	
+				// Do the same thing with the markers
+				List<MarkerOptions> listMyMarker= aNote.getMarkers();
+				for (int p = 0; p < listMyMarker.size(); p++) {
+					builder.include(listMyMarker.get(p).getPosition());
+				}
+				
+				List<MarkerOptions> listImageMarker= note.getImageMarkers();
+				for (int p = 0; p < listImageMarker.size(); p++) {
+					builder.include(listImageMarker.get(p).getPosition());
+				}
+			}
+		}
+		
 		// Get all the polygons, add their vertices to the bounding box
 		List<MyPolygon> listPolygons = note.getMyPolygons();
-		LatLngBounds.Builder builder = new LatLngBounds.Builder();
 		for (int i = 0; i < listPolygons.size(); i++) {
 			List<LatLng> points = listPolygons.get(i).getPoints();
 			for (int j = 0; j < points.size(); j++) {
@@ -625,41 +685,63 @@ public class FragmentNoteList extends Fragment implements OnClickListener, Drawi
 			}
 		}
 
-		// TODO: there aren't markers or images yet, but add in the same test
-		// for those
-		// once they exist.
+		// Do the same thing with the markers
+		List<MyMarker> listMyMarker= note.getMyMarkers();
+		for (int p = 0; p < listMyMarker.size(); p++) {
+			builder.include(listMyMarker.get(p).getPosition());
+		}
+		
+		List<MarkerOptions> listImageMarker= note.getImageMarkers();
+		for (int p = 0; p < listImageMarker.size(); p++) {
+			builder.include(listImageMarker.get(p).getPosition());
+		}
 
 		// Create the boundary, get the borders, convert to a string
-		/*LatLngBounds bounds = builder.build();
-		LatLng northeast = bounds.northeast;
-		LatLng southwest = bounds.southwest;
-		String newFieldBoundary = Double.toString(southwest.latitude) + ","
-				+ Double.toString(southwest.longitude) + ","
-				+ Double.toString(southwest.latitude) + ","
-				+ Double.toString(northeast.longitude) + ","
-				+ Double.toString(northeast.latitude) + ","
-				+ Double.toString(northeast.longitude) + ","
-				+ Double.toString(northeast.latitude) + ","
-				+ Double.toString(southwest.longitude);// and so on
+		try {
+			LatLngBounds bounds = builder.build();
+			LatLng northeast = bounds.northeast;
+			LatLng southwest = bounds.southwest;
+			String newFieldBoundary = Double.toString(southwest.latitude) + ","
+					+ Double.toString(southwest.longitude) + ","
+					+ Double.toString(southwest.latitude) + ","
+					+ Double.toString(northeast.longitude) + ","
+					+ Double.toString(northeast.latitude) + ","
+					+ Double.toString(northeast.longitude) + ","
+					+ Double.toString(northeast.latitude) + ","
+					+ Double.toString(southwest.longitude);// and so on
 
-		// Update the database with the new boundary value:
-		ContentValues valuesField = new ContentValues();
-		valuesField.put(TableFields.COL_BOUNDARY, newFieldBoundary);
-		String whereField = TableFields.COL_NAME + "= '" + note.getFieldName()
-				+ "'";
-		database.update(TableFields.TABLE_NAME, valuesField, whereField, null);*/
+			// Update the database with the new boundary value:
+			ContentValues valuesField = new ContentValues();
+			valuesField.put(TableFields.COL_BOUNDARY, newFieldBoundary);
+			String whereField = TableFields.COL_NAME + "= '" + note.getFieldName()
+					+ "'";
+			database.update(TableFields.TABLE_NAME, valuesField, whereField, null);
+
+			// Now draw this field
+			// Create polygon
+
+			List<LatLng> points = Field.StringToBoundary(newFieldBoundary);
+
+			if(points != null && points.isEmpty() == false) {
+				PolygonOptions polygonOptions = new PolygonOptions();
+				polygonOptions.fillColor(Field.FILL_COLOR_NOT_PLANNED);
+				polygonOptions.strokeWidth(Field.STROKE_WIDTH);
+				polygonOptions.strokeColor(Field.STROKE_COLOR);
+				for (int i = 0; i < points.size(); i++) {
+					polygonOptions.add(points.get(i));
+				}
+				if (currentField == null) {
+					Log.w("currentfield", "sdf");
+				} else if (currentField.getPolygon() == null) {
+					Log.w("currentfield get poly", "ok");
+				}
+				this.listener.NoteListUpdatePolygon(currentField.getId(), polygonOptions);
+			}
+		}
+		catch (IllegalStateException e){
+		}
 		
-		
-		// map.clear();
-		// MainActivity.drawFields();
-
-		// Done with case file boundary creation
-
-		// TODO more stuff
-		if (note.getId() == null) {
-			// New note
-			database.insert(TableNotes.TABLE_NAME, null, values);
-=======
+		//Save current my polygons to strpolygons
 		note.myPolygonsToStringPolygons();
 		//Save the polygons
 		values.put(TableNotes.COL_POLYGONS, note.getStrPolygons());
@@ -669,24 +751,27 @@ public class FragmentNoteList extends Fragment implements OnClickListener, Drawi
 		//Save the polylines
 		values.put(TableNotes.COL_LINES, note.getStrPolylines());
 		Log.d("SaveNote", "StrPolylines:" + note.getStrPolylines());
-		//Save current my polylines to strpolylines
+		//Save current my mymarkers to strmarkers
 		note.myMarkersToStringMarkers();
-		//Save the polylines
+		//Save the markers
 		values.put(TableNotes.COL_POINTS, note.getStrMarkers());
 		Log.d("SaveNote", "StrPoints:" + note.getStrMarkers());
+		//Save the imagemarkers
+		note.imageMarkersToStringImageMarkers();
+		values.put(TableNotes.COL_IMAGEPOINTS, note.getStrImageMarkers());
+		Log.d("SaveNote", "StrImagePoints:" + note.getStrImageMarkers());
 
 		//TODO more stuff
 		if(note.getId() == null){
 			//New note
 			Integer newId = (int) database.insert(TableNotes.TABLE_NAME, null, values);
 			note.setId(newId);
->>>>>>> e3bb026f0f4042bfd9f69ea2ba71dbd4f40a01dd
 		} else {
 			// Editing note
 			String where = TableNotes.COL_ID + " = " + note.getId();
 			database.update(TableNotes.TABLE_NAME, values, where, null);
 		}
-		
+
 		List<Image> images = note.getImages();
 		if(images != null){
 			for(int i=0; i<images.size(); i++){
@@ -707,7 +792,7 @@ public class FragmentNoteList extends Fragment implements OnClickListener, Drawi
 		} else {
 			Log.d("FragmentNoteList", "Images null");
 		}
-		
+
 		database.close();
 		dbHelper.close();
 	}
@@ -770,10 +855,11 @@ public class FragmentNoteList extends Fragment implements OnClickListener, Drawi
 				notes.get(i).removePolygons();
 				notes.get(i).removePolylines();
 				notes.get(i).removeMarkers();
+				notes.get(i).removeImageMarkers();
 			}
 		}
 	}
-	
+
 
 	public int oneNoteHeight() {
 		if (currentNoteView != null) {
@@ -795,23 +881,23 @@ public class FragmentNoteList extends Fragment implements OnClickListener, Drawi
 		}
 	}
 
-//	@Override
-//	public void onClick(View v) {
-//
-//		if (v.getId() == R.id.slider_butShowElevation) {
-//			
-//
-//		} else if (v.getId() == R.id.slider_butShowSoilType) {
-//
-//		}
-//	}
+	//	@Override
+	//	public void onClick(View v) {
+	//
+	//		if (v.getId() == R.id.slider_butShowElevation) {
+	//			
+	//
+	//		} else if (v.getId() == R.id.slider_butShowSoilType) {
+	//
+	//		}
+	//	}
 
-	
+
 	public boolean isAddingNote(){
 
 		return this.addingNote;
 	}
-	
+
 	private OnMapClickListener sliderMapClickListener = new OnMapClickListener(){
 		@Override
 		public void onMapClick(LatLng arg0) {
@@ -850,9 +936,8 @@ public class FragmentNoteList extends Fragment implements OnClickListener, Drawi
 			map.setOnMapClickListener((OnMapClickListener) listener);
 			map.setOnMarkerClickListener((OnMarkerClickListener) listener);
 			map.setOnMarkerDragListener((OnMarkerDragListener) listener);
-			
+
 			if(currentNote != null){
-				//TODO handle edit finish? Maybe not, i think i removed on edit?
 				currentPolyline.setColor(Field.STROKE_COLOR);
 				currentNote.addMyPolyline(currentPolyline); //Adds a myPolyline
 			}
@@ -880,24 +965,24 @@ public class FragmentNoteList extends Fragment implements OnClickListener, Drawi
 		builder.setTitle("Pick a color");
 		CharSequence colors[] = {"Red", "Yellow", "Blue", "Green"};
 		builder.setItems(colors, new DialogInterface.OnClickListener() {
-               public void onClick(DialogInterface dialog, int which) {
-            	   int intColor = Color.GREEN;
-            	   if(which == 0){
-            		   //Red
-            		   intColor = Color.RED;
-            	   } else if(which == 1){
-            		   //Yellow
-            		   intColor = Color.YELLOW;
-            	   } else if(which == 2){
-            		   //Blue
-            		   intColor = Color.BLUE;
-            	   } else {
-            		   //Green
-            		   intColor = Color.GREEN;
-            	   }
-            	   //redraw polygons/polylines/points with new color
-            	   currentNote.setColor(intColor);
-               }
+			public void onClick(DialogInterface dialog, int which) {
+				int intColor = Color.GREEN;
+				if(which == 0){
+					//Red
+					intColor = Color.RED;
+				} else if(which == 1){
+					//Yellow
+					intColor = Color.YELLOW;
+				} else if(which == 2){
+					//Blue
+					intColor = Color.BLUE;
+				} else {
+					//Green
+					intColor = Color.GREEN;
+				}
+				//redraw polygons/polylines/points with new color
+				currentNote.setColor(intColor);
+			}
 		});
 		AlertDialog dialog = builder.create();
 		dialog.show();		
@@ -905,238 +990,157 @@ public class FragmentNoteList extends Fragment implements OnClickListener, Drawi
 
 	@Override
 	public void DrawingClickCamera() {
-<<<<<<< HEAD
-		Log.w("drawclickcam imageest", Boolean.toString(image == null));
-
-		AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
-		builder.setTitle("Geotag Photo?");
-		builder.setMessage("Would you like to associate this picture with a point?")
-           .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
-               public void onClick(DialogInterface dialog, int id) {
-            	// Capture image from camera - added 10/31
-   				int CAMERA_PIC_REQUEST = 1337;
-   				Intent intent = new Intent(android.provider.MediaStore.ACTION_IMAGE_CAPTURE);
-
-   				File f = null;
-   				try {		
-   					f = createImageFile();
-					Log.w("after createimage ", Boolean.toString(image == null));
-   					Log.w("click_listener", image.toString());
-   				} catch (IOException e) {
-   					// TODO Auto-generated catch block
-   					e.printStackTrace();
-   				}
-   				intent.putExtra(MediaStore.EXTRA_OUTPUT, Uri.fromFile(f));
-				Log.w("after putextra", Boolean.toString(image == null));
-   				startActivityForResult(intent, CAMERA_PIC_REQUEST);
-   				
-				Log.w("after startact", Boolean.toString(image == null));
-
-               }
-           })
-           .setNegativeButton("No", new DialogInterface.OnClickListener() {
-               public void onClick(DialogInterface dialog, int id) {
-                   
-               }
-           });
-		AlertDialog dialog = builder.create();
-		dialog.show();		
+			// path to /data/data/yourapp/app_data/imageDir
+			String file = UUID.randomUUID().toString() + ".jpg"; //Random filename
+	// Create imageDir
+	File f = new File(this.getActivity().getFilesDir(), file);
+	imagePath = f.getAbsolutePath();
+	//Create new file
+	FileOutputStream fos;
+	try {
+		fos = this.getActivity().openFileOutput(file, Context.MODE_WORLD_WRITEABLE);
+		fos.close();
+	} catch (FileNotFoundException e) {
+		e.printStackTrace();
+	} catch (IOException e) {
+		e.printStackTrace();
 	}
-	
+	//Get reference to the file
+	File newf = new File(this.getActivity().getFilesDir(), file);
+
+	Uri outputFileUri = Uri.fromFile(newf);
+	Intent cameraIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE); 
+	cameraIntent.putExtra(MediaStore.EXTRA_OUTPUT, outputFileUri);
+	this.getActivity().startActivityForResult(cameraIntent, 999);
+}
+public void ImageCaptured(){
+	if(imagePath != null){
+		Log.d(TAG, "ImageCaptured");
+		Bitmap fullImage = BitmapFactory.decodeFile(imagePath);
+		Bitmap thumb = ThumbnailUtils.extractThumbnail(fullImage, 100, 100);
+		ImageView img = new ImageView(this.getActivity());
+		img.setOnClickListener(imageClickListener);
+		img.setTag(new Image(thumb, imagePath));
+
+		float scale = getResources().getDisplayMetrics().density;
+		int dpAsPixels = (int) (7*scale + 0.5f); //Margin
+		LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+		layoutParams.setMargins(dpAsPixels, 0, dpAsPixels, 0);
+
+		Drawable d = new BitmapDrawable(getResources(), thumb);
+		img.setBackgroundDrawable(d);			
+		this.currentOpenNoteView.layObjects.addView(img, layoutParams);
+
+		//Save path and thumbnail in database
+		if(currentNote != null){
+			currentNote.addImage(thumb, imagePath);
+		}
+	}
+}
+private OnClickListener imageClickListener = new OnClickListener(){
 	@Override
-	public void onActivityResult(int requestCode, int resultCode, Intent data) {
-		Log.w("onact imagetest", Boolean.toString(image == null));
-		Log.w("onActivityResult", "1");
-		Log.w("RESULT_OK",Integer.toString(resultCode));
-		if (resultCode == Activity.RESULT_OK) {
-			Log.w("REQUEST_OK",Integer.toString(requestCode));
-			if (requestCode == REQUEST_CODE) {
-				// We need to recycle unused bitmaps
-				if (bitmap != null) {
-					bitmap.recycle();
-				}
-//				Bundle extras = data.getExtras();
-//				bitmap = (Bitmap) extras.get("data");
-				
-				
-				//InputStream stream = getActivity().getContentResolver().openInputStream(data.getData());
-				Log.w("InputStream","2");
-				//bitmap = BitmapFactory.decodeStream(stream);
-				//stream.close();
-//				galleryAddPic();
-				try {
-					Log.w("exif", Boolean.toString(image == null));
-					ExifInterface xint = new ExifInterface(image.getAbsolutePath().toString());
-					Log.w("image",image.getAbsolutePath().toString());
-					
-					bitmap = BitmapFactory.decodeByteArray(xint.getThumbnail(),0,xint.getThumbnail().length);
-					bitmap=Bitmap.createScaledBitmap(bitmap, bitmap.getWidth()/2,bitmap.getHeight()/2, false);
-					float[] ltlng = new float[2];
-					xint.getLatLong(ltlng);
-//					LatLng picLoc = new LatLng(Double.parseDouble(xint.getAttribute(xint.TAG_GPS_LATITUDE)),Double.parseDouble(xint.getAttribute(xint.TAG_GPS_LONGITUDE)));
-					LatLng picLoc = new LatLng(ltlng[0],ltlng[1]);
-					//Log.w("picLoc",picLoc.toString());
-					//Log.w("bitmap", bitmap.toString());
-					Marker imageMarker = map.addMarker(new MarkerOptions().position(picLoc).icon(BitmapDescriptorFactory.fromBitmap(bitmap)));
-				} catch (IOException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-			}
-		}
-		super.onActivityResult(requestCode, resultCode, data);
-	}
-	
-=======
-        // path to /data/data/yourapp/app_data/imageDir
-		String file = UUID.randomUUID().toString() + ".jpg"; //Random filename
-		// Create imageDir
-        File f = new File(this.getActivity().getFilesDir(), file);
-        imagePath = f.getAbsolutePath();
-        //Create new file
-        FileOutputStream fos;
-		try {
-			fos = this.getActivity().openFileOutput(file, Context.MODE_WORLD_WRITEABLE);
-	        fos.close();
-		} catch (FileNotFoundException e) {
-			e.printStackTrace();
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-        //Get reference to the file
-        File newf = new File(this.getActivity().getFilesDir(), file);
-        
-        Uri outputFileUri = Uri.fromFile(newf);
-        Intent cameraIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE); 
-        cameraIntent.putExtra(MediaStore.EXTRA_OUTPUT, outputFileUri);
-        this.getActivity().startActivityForResult(cameraIntent, 999);
-	}
-	public void ImageCaptured(){
-		if(imagePath != null){
-			Log.d(TAG, "ImageCaptured");
-			Bitmap fullImage = BitmapFactory.decodeFile(imagePath);
-			Bitmap thumb = ThumbnailUtils.extractThumbnail(fullImage, 100, 100);
-			ImageView img = new ImageView(this.getActivity());
-			img.setOnClickListener(imageClickListener);
-			img.setTag(new Image(thumb, imagePath));
-			
-			float scale = getResources().getDisplayMetrics().density;
-			int dpAsPixels = (int) (7*scale + 0.5f); //Margin
-			LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-			layoutParams.setMargins(dpAsPixels, 0, dpAsPixels, 0);
-			
-			Drawable d = new BitmapDrawable(getResources(), thumb);
-			img.setBackgroundDrawable(d);			
-			this.currentOpenNoteView.layObjects.addView(img, layoutParams);
-			
-			//Save path and thumbnail in database
-			if(currentNote != null){
-				currentNote.addImage(thumb, imagePath);
-			}
-		}
-	}
-	private OnClickListener imageClickListener = new OnClickListener(){
-		@Override
-		public void onClick(View v) {
-			currentImage = (Image) v.getTag(); 
-			int height = currentOpenNoteView.layFullNote.getHeight();
-			currentOpenNoteView.layFullNote.setVisibility(View.GONE);
-			currentOpenNoteView.layImageView.setVisibility(View.VISIBLE);
-			//currentOpenNoteView.me.setBackgroundResource(R.drawable.note_image_viewer);
->>>>>>> e3bb026f0f4042bfd9f69ea2ba71dbd4f40a01dd
+	public void onClick(View v) {
+		currentImage = (Image) v.getTag(); 
+		int height = currentOpenNoteView.layFullNote.getHeight();
+		currentOpenNoteView.layFullNote.setVisibility(View.GONE);
+		currentOpenNoteView.layImageView.setVisibility(View.VISIBLE);
+		//currentOpenNoteView.me.setBackgroundResource(R.drawable.note_image_viewer);
+		// Gets the layout params that will allow you to resize the layout
+		RelativeLayout.LayoutParams params = (RelativeLayout.LayoutParams) currentOpenNoteView.layImageView.getLayoutParams();
+		// Changes the height and width to the specified *pixels*
+		params.height = height;
+		currentOpenNoteView.layImageView.setLayoutParams(params);
 
-			// Gets the layout params that will allow you to resize the layout
-			RelativeLayout.LayoutParams params = (RelativeLayout.LayoutParams) currentOpenNoteView.layImageView.getLayoutParams();
-			// Changes the height and width to the specified *pixels*
-			params.height = height;
-			currentOpenNoteView.layImageView.setLayoutParams(params);
-			
-			// Prepare a transaction to add fragments to this fragment
-			FragmentTransaction fragmentTransaction = getChildFragmentManager().beginTransaction();
-			// Add the list fragment to this fragment's layout
-			Log.i(TAG, "onCreate: adding FragmentNoteList to FragmentSidebar");
-			// Add the fragment to the this fragment's container layout
-			FragmentImageViewer fragmentImageViewer = new FragmentImageViewer();
-			fragmentTransaction.replace(currentOpenNoteView.layImageView.getId(), fragmentImageViewer, FragmentImageViewer.class.getName());
-			// Commit the transaction
-			fragmentTransaction.commit();
-		}
-	};
-	@Override
-	public void ImageViewerRequestData(FragmentImageViewer requester) {
-		if(this.currentNote != null){
-			requester.populateData(this.currentNote.getImages(), currentImage);
-		}
+		// Prepare a transaction to add fragments to this fragment
+		FragmentTransaction fragmentTransaction = getChildFragmentManager().beginTransaction();
+		// Add the list fragment to this fragment's layout
+		Log.i(TAG, "onCreate: adding FragmentNoteList to FragmentSidebar");
+		// Add the fragment to the this fragment's container layout
+		FragmentImageViewer fragmentImageViewer = new FragmentImageViewer();
+		fragmentTransaction.replace(currentOpenNoteView.layImageView.getId(), fragmentImageViewer, FragmentImageViewer.class.getName());
+		// Commit the transaction
+		fragmentTransaction.commit();
 	}
-	@Override
-	public void ImageViewerDone(Image image) {
-		currentOpenNoteView.layFullNote.setVisibility(View.VISIBLE);
-		currentOpenNoteView.layImageView.setVisibility(View.GONE);
-		//currentOpenNoteView.me.setBackgroundResource(R.drawable.note);
+};
+@Override
+public void ImageViewerRequestData(FragmentImageViewer requester) {
+	if(this.currentNote != null){
+		requester.populateData(this.currentNote.getImages(), currentImage);
 	}
-	public Boolean AddNote() {
-		if(addingNote == false){
-			Log.d("FragmentNoteList", "AddNote");
-			this.addingNote = true;
-			//Add a new note
-			Note newNote = new Note(currentField.getName());
-			notes.add(newNote);
-			currentNote = newNote;
-			
-			View newView = inflateOpenNote(newNote);
-			currentOpenNoteView = (OpenNoteView) newView.getTag();
-			listNotes.addView(newView, 0);
-			listener.NoteListAddNote();
-			
-			svNotes.scrollTo(0, 0);
-			//InputMethodManager inputMethodManager = (InputMethodManager) this.getActivity().getSystemService(Context.INPUT_METHOD_SERVICE);
-			//inputMethodManager.showSoftInput(newOpenNote.etComment, 0);
-			
-			//Show drawing fragment
-			fragmentDrawing = listener.NoteListShowDrawing();
-			fragmentDrawing.setListener(me);
-			return true;
-		}		
-		return false;
-	}
-	
-	@TargetApi(Build.VERSION_CODES.HONEYCOMB)
-	public static Bitmap decodeMutableBitmapFromResourceId(final Context context, final int bitmapResId) {
-	    final Options bitmapOptions = new Options();
-	    if (VERSION.SDK_INT >= VERSION_CODES.HONEYCOMB)
-	        bitmapOptions.inMutable = true;
-	    Bitmap bitmap = BitmapFactory.decodeResource(context.getResources(), bitmapResId, bitmapOptions);
-	    if (!bitmap.isMutable())
-	        bitmap = convertToMutable(context, bitmap);
-	    return bitmap;
-	}
+}
+@Override
+public void ImageViewerDone(Image image) {
+	currentOpenNoteView.layFullNote.setVisibility(View.VISIBLE);
+	currentOpenNoteView.layImageView.setVisibility(View.GONE);
+	//currentOpenNoteView.me.setBackgroundResource(R.drawable.note);
+}
+public Boolean AddNote() {
+	if(addingNote == false){
+		Log.d("FragmentNoteList", "AddNote");
+		this.addingNote = true;
+		//Add a new note
+		Note newNote = new Note(currentField.getName());
+		notes.add(newNote);
+		currentNote = newNote;
 
-	@TargetApi(Build.VERSION_CODES.ICE_CREAM_SANDWICH)
-	public static Bitmap convertToMutable(final Context context, final Bitmap imgIn) {
-	    final int width = imgIn.getWidth(), height = imgIn.getHeight();
-	    final Config type = imgIn.getConfig();
-	    File outputFile = null;
-	    final File outputDir = context.getCacheDir();
-	    try {
-	        outputFile = File.createTempFile(Long.toString(System.currentTimeMillis()), null, outputDir);
-	        outputFile.deleteOnExit();
-	        final RandomAccessFile randomAccessFile = new RandomAccessFile(outputFile, "rw");
-	        final FileChannel channel = randomAccessFile.getChannel();
-	        final MappedByteBuffer map = channel.map(MapMode.READ_WRITE, 0, imgIn.getRowBytes() * height);
-	        imgIn.copyPixelsToBuffer(map);
-	        imgIn.recycle();
-	        final Bitmap result = Bitmap.createBitmap(width, height, type);
-	        map.position(0);
-	        result.copyPixelsFromBuffer(map);
-	        channel.close();
-	        randomAccessFile.close();
-	        outputFile.delete();
-	        return result;
-	    } catch (final Exception e) {
-	    } finally {
-	        if (outputFile != null)
-	            outputFile.delete();
-	    }
-	    return null;
+		View newView = inflateOpenNote(newNote);
+		currentOpenNoteView = (OpenNoteView) newView.getTag();
+		listNotes.addView(newView, 0);
+		listener.NoteListAddNote();
+
+		svNotes.scrollTo(0, 0);
+		//InputMethodManager inputMethodManager = (InputMethodManager) this.getActivity().getSystemService(Context.INPUT_METHOD_SERVICE);
+		//inputMethodManager.showSoftInput(newOpenNote.etComment, 0);
+
+		//Show drawing fragment
+		fragmentDrawing = listener.NoteListShowDrawing();
+		fragmentDrawing.setListener(me);
+		return true;
+	}		
+	return false;
+}
+
+@TargetApi(Build.VERSION_CODES.HONEYCOMB)
+public static Bitmap decodeMutableBitmapFromResourceId(final Context context, final int bitmapResId) {
+	final Options bitmapOptions = new Options();
+	if (VERSION.SDK_INT >= VERSION_CODES.HONEYCOMB)
+		bitmapOptions.inMutable = true;
+	Bitmap bitmap = BitmapFactory.decodeResource(context.getResources(), bitmapResId, bitmapOptions);
+	if (!bitmap.isMutable())
+		bitmap = convertToMutable(context, bitmap);
+	return bitmap;
+}
+
+@TargetApi(Build.VERSION_CODES.ICE_CREAM_SANDWICH)
+public static Bitmap convertToMutable(final Context context, final Bitmap imgIn) {
+	final int width = imgIn.getWidth(), height = imgIn.getHeight();
+	final Config type = imgIn.getConfig();
+	File outputFile = null;
+	final File outputDir = context.getCacheDir();
+	try {
+		outputFile = File.createTempFile(Long.toString(System.currentTimeMillis()), null, outputDir);
+		outputFile.deleteOnExit();
+		final RandomAccessFile randomAccessFile = new RandomAccessFile(outputFile, "rw");
+		final FileChannel channel = randomAccessFile.getChannel();
+		final MappedByteBuffer map = channel.map(MapMode.READ_WRITE, 0, imgIn.getRowBytes() * height);
+		imgIn.copyPixelsToBuffer(map);
+		imgIn.recycle();
+		final Bitmap result = Bitmap.createBitmap(width, height, type);
+		map.position(0);
+		result.copyPixelsFromBuffer(map);
+		channel.close();
+		randomAccessFile.close();
+		outputFile.delete();
+		return result;
+	} catch (final Exception e) {
+	} finally {
+		if (outputFile != null)
+			outputFile.delete();
 	}
+	return null;
+}
+
+@Override
+public void onClick(View arg0) {	
+}
 }
