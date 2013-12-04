@@ -8,6 +8,7 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.graphics.Bitmap;
 import android.graphics.Color;
+import android.util.Log;
 
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
@@ -157,7 +158,8 @@ public class Note {
 	}
 	
 	public void imageMarkersToStringImageMarkers(){
-		StringBuilder build = new StringBuilder();		
+		StringBuilder build = new StringBuilder();
+		Log.w("imagemarkerstostringimagemarkers", imageMarkers.toString());
 		for(int i=0; i<imageMarkers.size(); i++){
 			LatLng point = imageMarkers.get(i).getPosition();
 			if(point != null){
@@ -290,9 +292,14 @@ public class Note {
 		return markers;
 	}
 	public List<MarkerOptions> getImageMarkers() {
-		//Convert strPolygons to polygons
+		//Convert strImageMarkers to markers
 		List<MarkerOptions> markers = new ArrayList<MarkerOptions>();
 		String all = this.getStrImageMarkers();
+		if (all != null) {
+			Log.w("all", all);
+		} else {
+			Log.w("all", "all null");
+		}
 		if(all != null){
 			StringTokenizer tokensPoints = new StringTokenizer(all, ",");
 			while (tokensPoints.hasMoreTokens()) {

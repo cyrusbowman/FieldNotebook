@@ -811,7 +811,7 @@ AddFieldListener, SidebarListener, NoteListListener, FieldListListener, MyPolygo
 
 				ContentValues values = new ContentValues();
 				values.put(TableFields.COL_NAME, currentField.getName());
-				values.put(TableFields.COL_ACRES, currentField.getAcres());
+//				values.put(TableFields.COL_ACRES, currentField.getAcres());
 				values.put(TableFields.COL_BOUNDARY, strNewBoundary);
 
 				//TODO only update if something changed

@@ -61,26 +61,6 @@
 			    android:layout_alignParentLeft="true"
 			    android:layout_below="@+id/sidebar_layTitleRow1"
 			    android:paddingBottom ="10dp" >
-			    <TextView 
-			        android:id="@+id/sidebar_tvAcres"
-			        android:layout_width="wrap_content"
-			        android:layout_height="wrap_content"
-			        android:layout_alignParentLeft="true"
-			        android:layout_alignParentTop="true"
-			        android:layout_marginLeft="30dp"
-			        android:layout_marginRight="7dp"
-			        android:textSize="20sp"
-			        android:text="84"
-			        />
-			    <TextView 
-			        android:id="@+id/sidebar_label_acres"
-			        android:layout_width="wrap_content"
-			        android:layout_height="wrap_content"
-			        android:layout_alignParentTop="true"
-			        android:layout_toRightOf="@+id/sidebar_tvAcres"
-			        android:textSize="20sp"
-			        android:text="acres"
-			        />
 			</RelativeLayout>
 		</RelativeLayout>
 	    <RelativeLayout

@@ -31,7 +31,7 @@ public class Field {
 	private Integer hasChanged = 0;
 	private String dateChanged = null;
 	private String name = "";
-	private Integer acres = 0;
+//	private Integer acres = 0;
 	private List<LatLng> boundary;
 	private LatLngBounds boundingBox = null;
 	private Integer deleted = 0;
@@ -125,9 +125,9 @@ public class Field {
 		return name;
 	}
 
-	public Integer getAcres() {
-		return acres;
-	}
+//	public Integer getAcres() {
+//		return acres;
+//	}
 
 	public List<LatLng> getBoundary() {
 		return boundary;
@@ -161,9 +161,9 @@ public class Field {
 		this.name = name;
 	}
 
-	public void setAcres(Integer acres) {
-		this.acres = acres;
-	}
+//	public void setAcres(Integer acres) {
+//		this.acres = acres;
+//	}
 
 	public void setBoundary(List<LatLng> boundary) {
 		this.boundary = boundary;
@@ -201,7 +201,7 @@ public class Field {
 			field.setDateChanged(cursor.getString(cursor.getColumnIndex(TableFields.COL_DATE_CHANGED)));
 			String boundary = cursor.getString(cursor.getColumnIndex(TableFields.COL_BOUNDARY));
 			field.setBoundary(Field.StringToBoundary(boundary));
-			field.setAcres(cursor.getInt(cursor.getColumnIndex(TableFields.COL_ACRES)));
+//			field.setAcres(cursor.getInt(cursor.getColumnIndex(TableFields.COL_ACRES)));
 			field.setName(cursor.getString(cursor.getColumnIndex(TableFields.COL_NAME)));
 			field.setDeleted(cursor.getInt(cursor.getColumnIndex(TableFields.COL_DELETED)));
 			return field;

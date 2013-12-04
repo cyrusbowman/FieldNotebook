@@ -628,7 +628,27 @@ public class FragmentNoteList extends Fragment implements OnClickListener, Drawi
 		ContentValues values = new ContentValues();
 		values.put(TableNotes.COL_COMMENT,note.getComment());
 		values.put(TableNotes.COL_FIELD_NAME,note.getFieldName());
-		values.put(TableNotes.COL_COLOR,note.getColor());
+		values.put(TableNotes.COL_COLOR,note.getColor());		
+		
+		//Save current my polygons to strpolygons
+		note.myPolygonsToStringPolygons();
+		//Save the polygons
+		values.put(TableNotes.COL_POLYGONS, note.getStrPolygons());
+		Log.d("SaveNote", "StrPolygons:" + note.getStrPolygons());
+		//Save current my polylines to strpolylines
+		note.myPolylinesToStringPolylines();
+		//Save the polylines
+		values.put(TableNotes.COL_LINES, note.getStrPolylines());
+		Log.d("SaveNote", "StrPolylines:" + note.getStrPolylines());
+		//Save current my mymarkers to strmarkers
+		note.myMarkersToStringMarkers();
+		//Save the markers
+		values.put(TableNotes.COL_POINTS, note.getStrMarkers());
+		Log.d("SaveNote", "StrPoints:" + note.getStrMarkers());
+		//Save the imagemarkers
+		note.imageMarkersToStringImageMarkers();
+		values.put(TableNotes.COL_IMAGEPOINTS, note.getStrImageMarkers());
+		Log.d("SaveNote", "StrImagePoints:" + note.getStrImageMarkers());
 
 		LatLngBounds.Builder builder = new LatLngBounds.Builder();
 		List<Note> allNotes = Note.FindNotesByFieldName(dbHelper.getReadableDatabase(), note.getFieldName());
@@ -660,7 +680,8 @@ public class FragmentNoteList extends Fragment implements OnClickListener, Drawi
 					builder.include(listMyMarker.get(p).getPosition());
 				}
 				
-				List<MarkerOptions> listImageMarker= note.getImageMarkers();
+				List<MarkerOptions> listImageMarker = aNote.getImageMarkers();
+				Log.w("imagemarkers A", listImageMarker.toString());
 				for (int p = 0; p < listImageMarker.size(); p++) {
 					builder.include(listImageMarker.get(p).getPosition());
 				}
@@ -691,7 +712,8 @@ public class FragmentNoteList extends Fragment implements OnClickListener, Drawi
 			builder.include(listMyMarker.get(p).getPosition());
 		}
 		
-		List<MarkerOptions> listImageMarker= note.getImageMarkers();
+		List<MarkerOptions> listImageMarker = note.getImageMarkers();
+		Log.w("imagemarkers B", listImageMarker.toString());
 		for (int p = 0; p < listImageMarker.size(); p++) {
 			builder.include(listImageMarker.get(p).getPosition());
 		}
@@ -741,26 +763,6 @@ public class FragmentNoteList extends Fragment implements OnClickListener, Drawi
 		catch (IllegalStateException e){
 		}
 		
-		//Save current my polygons to strpolygons
-		note.myPolygonsToStringPolygons();
-		//Save the polygons
-		values.put(TableNotes.COL_POLYGONS, note.getStrPolygons());
-		Log.d("SaveNote", "StrPolygons:" + note.getStrPolygons());
-		//Save current my polylines to strpolylines
-		note.myPolylinesToStringPolylines();
-		//Save the polylines
-		values.put(TableNotes.COL_LINES, note.getStrPolylines());
-		Log.d("SaveNote", "StrPolylines:" + note.getStrPolylines());
-		//Save current my mymarkers to strmarkers
-		note.myMarkersToStringMarkers();
-		//Save the markers
-		values.put(TableNotes.COL_POINTS, note.getStrMarkers());
-		Log.d("SaveNote", "StrPoints:" + note.getStrMarkers());
-		//Save the imagemarkers
-		note.imageMarkersToStringImageMarkers();
-		values.put(TableNotes.COL_IMAGEPOINTS, note.getStrImageMarkers());
-		Log.d("SaveNote", "StrImagePoints:" + note.getStrImageMarkers());
-
 		//TODO more stuff
 		if(note.getId() == null){
 			//New note
@@ -1034,6 +1036,16 @@ public void ImageCaptured(){
 		//Save path and thumbnail in database
 		if(currentNote != null){
 			currentNote.addImage(thumb, imagePath);
+		}
+		try {
+			ExifInterface exifInt = new ExifInterface(imagePath);
+			imageBitmap = Bitmap.createScaledBitmap(thumb, thumb.getWidth()/2,thumb.getHeight()/2, false);
+			float[] ltlng = new float[2];
+			exifInt.getLatLong(ltlng);
+			LatLng picLoc = new LatLng(ltlng[0],ltlng[1]);
+			currentNote.addImageMarker(map.addMarker(new MarkerOptions().position(picLoc).icon(BitmapDescriptorFactory.fromBitmap(imageBitmap))));
+		} catch (IOException e) {
+			e.printStackTrace();
 		}
 	}
 }

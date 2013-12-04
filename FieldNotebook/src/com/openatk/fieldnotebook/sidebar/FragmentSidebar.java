@@ -36,7 +36,6 @@ public class FragmentSidebar extends Fragment implements OnClickListener, OnTouc
 
 	
 	private TextView tvName;
-	private TextView tvAcres;
 	private ImageButton butEditField;
 	private Button butAddNote;
 	private ImageButton butBackToFields;
@@ -70,7 +69,6 @@ public class FragmentSidebar extends Fragment implements OnClickListener, OnTouc
 		View view = inflater.inflate(R.layout.fragment_slider, container, false);
 
 		tvName = (TextView) view.findViewById(R.id.sidebar_tvName);
-		tvAcres = (TextView) view.findViewById(R.id.sidebar_tvAcres);
 		
 		//view.setOnTouchListener(this);
 		//tvName.setOnTouchListener(this);
@@ -170,14 +168,12 @@ public class FragmentSidebar extends Fragment implements OnClickListener, OnTouc
 		this.container = container;
 		if (currentField != null) {
 			tvName.setText(currentField.getName());
-			tvAcres.setText(Integer.toString(currentField.getAcres()) + " ac");
 			fieldListContainer.setVisibility(View.GONE);
 			fieldMenu.setVisibility(View.GONE);
 			noteListContainer.setVisibility(View.VISIBLE);
 			noteMenu.setVisibility(View.VISIBLE);
 		} else {
 			tvName.setText("");
-			tvAcres.setText("");
 			fieldListContainer.setVisibility(View.VISIBLE);
 			fieldMenu.setVisibility(View.VISIBLE);
 			noteListContainer.setVisibility(View.GONE);
