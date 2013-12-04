@@ -3,10 +3,10 @@ package com.openatk.fieldnotebook.sidebar;
 import com.openatk.fieldnotebook.R;
 import com.openatk.fieldnotebook.MainActivity.DropDownAnim;
 import com.openatk.fieldnotebook.db.Field;
-import com.openatk.fieldnotebook.fieldlist.FieldListListener;
 import com.openatk.fieldnotebook.fieldlist.FragmentFieldList;
 import com.openatk.fieldnotebook.notelist.FragmentNoteList;
-import com.openatk.fieldnotebook.notelist.NoteListListener;
+import com.openatk.fieldnotebook.sidebar.FragmentSidebar;
+import com.openatk.fieldnotebook.sidebar.SidebarListener;
 
 import android.app.Activity;
 import android.graphics.Point;
@@ -36,22 +36,19 @@ public class FragmentSidebar extends Fragment implements OnClickListener, OnTouc
 
 	
 	private TextView tvName;
-	private TextView tvAcres;
 	private ImageButton butEditField;
 	private Button butAddNote;
 	private ImageButton butBackToFields;
+	private ViewGroup fieldMenu;
+	private ViewGroup noteMenu;
 	
 	private SidebarListener listener;
 	private Field currentField = null;
 	private View container = null;
 	
-	
 	private Boolean initialCreate;
 	private ViewGroup noteListContainer;
 	private ViewGroup fieldListContainer;
-	private ViewGroup fieldMenu;
-	private ViewGroup noteMenu;
-
 	FragmentNoteList fragmentNoteList;
 	FragmentFieldList fragmentFieldList;
 
@@ -69,10 +66,9 @@ public class FragmentSidebar extends Fragment implements OnClickListener, OnTouc
 	@Override
 	public View onCreateView(LayoutInflater inflater, ViewGroup container,
 			Bundle savedInstanceState) {
-		View view = inflater.inflate(R.layout.fragment_sidebar, container, false);
+		View view = inflater.inflate(R.layout.fragment_slider, container, false);
 
 		tvName = (TextView) view.findViewById(R.id.sidebar_tvName);
-		tvAcres = (TextView) view.findViewById(R.id.sidebar_tvAcres);
 		
 		//view.setOnTouchListener(this);
 		//tvName.setOnTouchListener(this);
@@ -95,9 +91,15 @@ public class FragmentSidebar extends Fragment implements OnClickListener, OnTouc
 			initialCreate = false;
 			// Prepare a transaction to add fragments to this fragment
 			FragmentTransaction fragmentTransaction = getChildFragmentManager().beginTransaction();
-
+			Log.w("fragtrans", fragmentTransaction.toString());
 			// Add the list fragment to this fragment's layout
+			Log.w("fieldListContainer", Boolean.toString(fieldListContainer == null));
+			Log.w("fragmentFieldList", Boolean.toString(fragmentFieldList == null));
+			Log.w("noteListContainer", Boolean.toString(noteListContainer == null));
+			Log.w("fragmentNoteList", Boolean.toString(fragmentNoteList == null));
+
 			if (fieldListContainer != null) {
+				
 				Log.i(TAG, "onCreate: adding FragmentFieldList to FragmentSidebar");
 				// Add the fragment to the this fragment's container layout
 				fragmentFieldList = new FragmentFieldList();
@@ -109,9 +111,29 @@ public class FragmentSidebar extends Fragment implements OnClickListener, OnTouc
 				fragmentNoteList = new FragmentNoteList();
 				fragmentTransaction.replace(noteListContainer.getId(), fragmentNoteList, FragmentNoteList.class.getName());
 			}
+			Log.w("fragtrans", fragmentTransaction.toString());
 			// Commit the transaction
 			fragmentTransaction.commit();
 		}
+				
+		// If this is the first creation of the fragment, add child fragments
+//		if (initialCreate) {
+//			initialCreate = false;
+//			// Prepare a transaction to add fragments to this fragment
+//			FragmentTransaction fragmentTransaction = getChildFragmentManager().beginTransaction();
+//
+//			// Add the list fragment to this fragment's layout
+//			noteListContainer = (ViewGroup) view.findViewById(R.id.sidebar_fragment_listNotes_container);
+//			if (noteListContainer != null) {
+//				Log.i(TAG, "onCreate: adding FragmentNoteList to Fragmentsidebar");
+//
+//				// Add the fragment to the this fragment's container layout
+//				fragmentNoteList = new FragmentNoteList();
+//				fragmentTransaction.replace(noteListContainer.getId(), fragmentNoteList, FragmentNoteList.class.getName());
+//			}
+//			// Commit the transaction
+//			fragmentTransaction.commit();
+//		}
 		
 		return view;
 	}
@@ -131,7 +153,7 @@ public class FragmentSidebar extends Fragment implements OnClickListener, OnTouc
 			throw new ClassCastException(activity.toString() + " must implement FragmentSlider.SliderListener");
 		}
 		Log.d("FragmentSlider", "Attached");
-	}	
+	}		
 	
 	@Override
 	public void onActivityCreated(Bundle savedInstanceState) {
@@ -146,14 +168,12 @@ public class FragmentSidebar extends Fragment implements OnClickListener, OnTouc
 		this.container = container;
 		if (currentField != null) {
 			tvName.setText(currentField.getName());
-			tvAcres.setText(Integer.toString(currentField.getAcres()) + " ac");
 			fieldListContainer.setVisibility(View.GONE);
 			fieldMenu.setVisibility(View.GONE);
 			noteListContainer.setVisibility(View.VISIBLE);
 			noteMenu.setVisibility(View.VISIBLE);
 		} else {
 			tvName.setText("");
-			tvAcres.setText("");
 			fieldListContainer.setVisibility(View.VISIBLE);
 			fieldMenu.setVisibility(View.VISIBLE);
 			noteListContainer.setVisibility(View.GONE);
@@ -214,7 +234,7 @@ public class FragmentSidebar extends Fragment implements OnClickListener, OnTouc
 	private void SliderDragDown(int start) {
 		if(container != null){
 			int height = container.getHeight();
-			FrameLayout layout = (FrameLayout) this.getView().findViewById(R.id.slider_fragment_listNotes_container);
+			FrameLayout layout = (FrameLayout) this.getView().findViewById(R.id.sidebar_fragment_listFields_container);
 			RelativeLayout.LayoutParams params = (RelativeLayout.LayoutParams) layout.getLayoutParams();
 			sliderStartDrag = height - start - params.height;
 			sliderHeightStart = params.height;
@@ -225,7 +245,7 @@ public class FragmentSidebar extends Fragment implements OnClickListener, OnTouc
 		if(container != null){
 			int height = container.getHeight();
 		
-			FrameLayout layout = (FrameLayout) this.getView().findViewById(R.id.slider_fragment_listNotes_container);
+			FrameLayout layout = (FrameLayout) this.getView().findViewById(R.id.sidebar_fragment_listFields_container);
 			RelativeLayout.LayoutParams params = (RelativeLayout.LayoutParams) layout.getLayoutParams();
 			
 			if((height - whereY - sliderStartDrag) > 0){
@@ -253,7 +273,7 @@ public class FragmentSidebar extends Fragment implements OnClickListener, OnTouc
 				Log.d("SliderDragUp", "closed");
 			}
 			//Find end height
-			FrameLayout layout = (FrameLayout) this.getView().findViewById(R.id.slider_fragment_listNotes_container);
+			FrameLayout layout = (FrameLayout) this.getView().findViewById(R.id.sidebar_fragment_listFields_container);
 			RelativeLayout.LayoutParams params = (RelativeLayout.LayoutParams) layout.getLayoutParams();
 			if(params.height > sliderHeightStart){
 				//Make bigger
@@ -269,7 +289,7 @@ public class FragmentSidebar extends Fragment implements OnClickListener, OnTouc
 	private void SliderShrink(){
 		if(container != null){
 			int oneThirdHeight = container.getHeight() / 3;
-			FrameLayout layout = (FrameLayout) this.getView().findViewById(R.id.slider_fragment_listNotes_container);
+			FrameLayout layout = (FrameLayout) this.getView().findViewById(R.id.sidebar_fragment_listFields_container);
 			RelativeLayout.LayoutParams params = (RelativeLayout.LayoutParams) layout.getLayoutParams();
 			if(sliderPosition == 2 || sliderPosition == 1){
 				//Middle -> Small
@@ -299,9 +319,9 @@ public class FragmentSidebar extends Fragment implements OnClickListener, OnTouc
 	private void SliderGrow(){
 		if(container != null){
 			int oneThirdHeight = container.getHeight() / 3;	
-			RelativeLayout relAdd = (RelativeLayout) this.getView().findViewById(R.id.slider_layMenu);
+			RelativeLayout relAdd = (RelativeLayout) this.getView().findViewById(R.id.sidebar_layMenuFields);
 			Log.d("layMenu:", Integer.toString(relAdd.getHeight()));
-			FrameLayout layout = (FrameLayout) this.getView().findViewById(R.id.slider_fragment_listNotes_container);
+			FrameLayout layout = (FrameLayout) this.getView().findViewById(R.id.sidebar_fragment_listFields_container);
 			RelativeLayout.LayoutParams params = (RelativeLayout.LayoutParams) layout.getLayoutParams();
 			if(sliderPosition == 0 || sliderPosition == 1){
 				//Small -> Middle
@@ -321,9 +341,9 @@ public class FragmentSidebar extends Fragment implements OnClickListener, OnTouc
 		}
 	}
 	private void SliderOneNote(){
-		RelativeLayout relAdd = (RelativeLayout) this.getView().findViewById(R.id.slider_layMenu);
+		RelativeLayout relAdd = (RelativeLayout) this.getView().findViewById(R.id.sidebar_layMenuFields);
 		Log.d("layMenu:", Integer.toString(relAdd.getHeight()));
-		FrameLayout layout = (FrameLayout) this.getView().findViewById(R.id.slider_fragment_listNotes_container);
+		FrameLayout layout = (FrameLayout) this.getView().findViewById(R.id.sidebar_fragment_listFields_container);
 		RelativeLayout.LayoutParams params = (RelativeLayout.LayoutParams) layout.getLayoutParams();
 		
 		DropDownAnim an = new DropDownAnim(layout, params.height, this.oneNoteHeight());

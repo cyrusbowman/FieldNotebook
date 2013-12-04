@@ -167,13 +167,13 @@ public class MyPolyline implements OnMapClickListener, OnMarkerDragListener, OnM
 			Log.d("MarkerSelected:", Integer.toString(markerSelected));
 			// Change icon of last selected marker
 			Marker oldMarker = markers.get(markerSelected.intValue());
-			oldMarker.setIcon(icon);
+			//oldMarker.setIcon(icon);
 		}
 		if (markerIndex != null) {
 			Log.d("MarkerIndex:", Integer.toString(markerIndex));
 			// Change icon on new selected marker
 			Marker oldMarker = this.markers.get(markerIndex.intValue());
-			oldMarker.setIcon(iconSelected);
+			//oldMarker.setIcon(iconSelected);
 		}
 		markerSelected = markerIndex;
 	}

@@ -23,8 +23,8 @@ import android.widget.ImageButton;
 public class FragmentAddField extends Fragment implements OnClickListener, OnCheckedChangeListener {
 
 	private EditText name;
-	private EditText acres;
-	private CheckBox autoAcres;
+	//private EditText acres;
+	//private CheckBox autoAcres;
 	private AddFieldListener listener;
 	private float autoAcresValue;
 	
@@ -33,7 +33,7 @@ public class FragmentAddField extends Fragment implements OnClickListener, OnChe
 	public interface AddFieldListener {
 		public void AddFieldUndo();
 
-		public void AddFieldDone(String name, Integer acres);
+		public void AddFieldDone(String name);
 
 		public void AddFieldDelete();
 
@@ -54,12 +54,12 @@ public class FragmentAddField extends Fragment implements OnClickListener, OnChe
 				.findViewById(R.id.add_field_delete);
 
 		name = (EditText) view.findViewById(R.id.add_field_name);
-		acres = (EditText) view.findViewById(R.id.add_field_etAcres);
-		autoAcres = (CheckBox) view.findViewById(R.id.add_field_chkAutoAcres);
+//		acres = (EditText) view.findViewById(R.id.add_field_etAcres);
+//		autoAcres = (CheckBox) view.findViewById(R.id.add_field_chkAutoAcres);
 		
-		acres.setOnFocusChangeListener(new OnFocusChangeListener() {
+//		acres.setOnFocusChangeListener(new OnFocusChangeListener() {
 
-			@Override
+/*			@Override
 			public void onFocusChange(View v, boolean hasFocus) {
 				if (hasFocus) {
 					if (acres.getText().toString().contains("ac")) {
@@ -86,13 +86,13 @@ public class FragmentAddField extends Fragment implements OnClickListener, OnChe
 					}
 				}
 			}
-		});
+		});*/
 
 		butDone.setOnClickListener(this);
 		butUndo.setOnClickListener(this);
 		butDelete.setOnClickListener(this);
 		
-		autoAcres.setOnCheckedChangeListener(this);
+//		autoAcres.setOnCheckedChangeListener(this);
 		return view;
 	}
 
@@ -110,14 +110,14 @@ public class FragmentAddField extends Fragment implements OnClickListener, OnChe
 		Field field = listener.AddFieldGetCurrentField();
 		if (field != null) {
 			name.setText(field.getName());
-			acres.setText(Integer.toString(field.getAcres()) + " ac");
-			autoAcres.setChecked(false);
-			acres.setEnabled(true);
+//			acres.setText(Integer.toString(field.getAcres()) + " ac");
+//			autoAcres.setChecked(false);
+//			acres.setEnabled(true);
 		} else {
 			name.setText("");
-			acres.setText("");
-			autoAcres.setChecked(true);
-			acres.setEnabled(false);
+//			acres.setText("");
+//			autoAcres.setChecked(true);
+//			acres.setEnabled(false);
 		}
 	}
 
@@ -142,13 +142,13 @@ public class FragmentAddField extends Fragment implements OnClickListener, OnChe
 	public void onClick(View v) {
 		if (v.getId() == R.id.add_field_done) {
 			Integer intAcres = 0;
-			String strAcres = acres.getText().toString();
-			strAcres = strAcres.replace(" ", "");
-			strAcres = strAcres.replace("ac", "");
-			if (strAcres.length() > 0) {
-				intAcres = Integer.parseInt(strAcres);
-			}
-			listener.AddFieldDone(name.getText().toString(), intAcres);
+//			String strAcres = acres.getText().toString();
+//			strAcres = strAcres.replace(" ", "");
+//			strAcres = strAcres.replace("ac", "");
+//			if (strAcres.length() > 0) {
+//				intAcres = Integer.parseInt(strAcres);
+//			}
+			listener.AddFieldDone(name.getText().toString());
 		} else if (v.getId() == R.id.add_field_undo) {
 			listener.AddFieldUndo();
 		} else if (v.getId() == R.id.add_field_delete) {
@@ -166,28 +166,34 @@ public class FragmentAddField extends Fragment implements OnClickListener, OnChe
 		}
 	}
 	
-	public void autoAcres(float acres){
+/*	public void autoAcres(float acres){
 		Log.d("FragmentAddField", "autoAcres:" + Float.toString(acres));
 		autoAcresValue = acres;
 		if(this.autoAcres != null && this.autoAcres.isChecked()){
 			int newAcres = (int) acres;
 			this.acres.setText(Integer.toString(newAcres) + " ac");
 		}
-	}
+	}*/
 
 	@Override
-	public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-		Log.d("FragmentAddField", "Check click");
-		if(buttonView.getId() == R.id.add_field_chkAutoAcres){
-			Log.d("FragmentAddField", "Check Auto acres");
-			if(isChecked){
-				Log.d("FragmentAddField", "Checked");
-				int newAcres = (int) autoAcresValue;
-				this.acres.setText(Integer.toString(newAcres) + " ac");
-				this.acres.setEnabled(false);
-			} else {
-				this.acres.setEnabled(true);
-			}
-		}
+	public void onCheckedChanged(CompoundButton arg0, boolean arg1) {
+		// TODO Auto-generated method stub
+		
 	}
+
+//	@Override
+//	public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+//		Log.d("FragmentAddField", "Check click");
+//		if(buttonView.getId() == R.id.add_field_chkAutoAcres){
+//			Log.d("FragmentAddField", "Check Auto acres");
+//			if(isChecked){
+//				Log.d("FragmentAddField", "Checked");
+//				int newAcres = (int) autoAcresValue;
+//				this.acres.setText(Integer.toString(newAcres) + " ac");
+//				this.acres.setEnabled(false);
+//			} else {
+//				this.acres.setEnabled(true);
+//			}
+//		}
+//	}
 }

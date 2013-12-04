@@ -16,7 +16,7 @@ public class FragmentDrawing extends Fragment implements OnClickListener {
 	private ImageButton butPoint = null;
 	private ImageButton butPolyline = null;
 	private ImageButton butPolygon = null;
-	private ImageButton butColor = null;
+//	private ImageButton butColor = null;
 	private ImageButton butCamera = null;
 
 	// Interface for receiving data
@@ -37,9 +37,9 @@ public class FragmentDrawing extends Fragment implements OnClickListener {
 	public void setPolygonIcon(int resId){
 		this.butPolygon.setImageResource(resId);
 	}
-	public void setColorIcon(int resId){
-		this.butColor.setImageResource(resId);
-	}
+//	public void setColorIcon(int resId){
+//		this.butColor.setImageResource(resId);
+//	}
 	public void setCameraIcon(int resId){
 		this.butCamera.setImageResource(resId);
 	}
@@ -52,13 +52,13 @@ public class FragmentDrawing extends Fragment implements OnClickListener {
 		butPoint = (ImageButton) view.findViewById(R.id.fragment_drawing_butPoint);
 		butPolyline = (ImageButton) view.findViewById(R.id.fragment_drawing_butLine);
 		butPolygon = (ImageButton) view.findViewById(R.id.fragment_drawing_butPolygon);
-		butColor = (ImageButton) view.findViewById(R.id.fragment_drawing_butColor);
-		butCamera = (ImageButton) view.findViewById(R.id.fragment_drawing_butPicture);
+//		butColor = (ImageButton) view.findViewById(R.id.fragment_drawing_butColor);
+		butCamera = (ImageButton) view.findViewById(R.id.note_take_picture);
 
 		butPoint.setOnClickListener(this);
 		butPolyline.setOnClickListener(this);
 		butPolygon.setOnClickListener(this);
-		butColor.setOnClickListener(this);
+//		butColor.setOnClickListener(this);
 		butCamera.setOnClickListener(this);
 
 		return view;
@@ -93,9 +93,9 @@ public class FragmentDrawing extends Fragment implements OnClickListener {
 				listener.DrawingClickPolyline();
 			} else if (v.getId() == R.id.fragment_drawing_butPolygon) {
 				listener.DrawingClickPolygon();
-			} else if (v.getId() == R.id.fragment_drawing_butColor) {
-				listener.DrawingClickColor();
-			} else if (v.getId() == R.id.fragment_drawing_butPicture) {
+//			} else if (v.getId() == R.id.fragment_drawing_butColor) {
+//				listener.DrawingClickColor();
+			} else if (v.getId() == R.id.note_take_picture) {
 				listener.DrawingClickCamera();
 			}
 		}

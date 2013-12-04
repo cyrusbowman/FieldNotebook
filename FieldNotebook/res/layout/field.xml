@@ -31,18 +31,5 @@
 	    android:layout_below="@+id/field_row1"
 	    android:layout_alignParentLeft="true"
 	    android:layout_marginTop="5dp">
-	   	<TextView 
-	        android:id="@+id/field_txtAcres"
-	        android:layout_width="match_parent"
-	        android:layout_height="wrap_content"
-	        android:layout_alignParentLeft="true"
-	        android:layout_centerVertical="true"
-	        android:textSize="18sp"
-	        android:paddingLeft="7dp"
-	        android:singleLine="true"
-	        android:text="# Acres"
-	        android:textColor="#000"
-	        android:paddingBottom="20dp"
-	        />
    </RelativeLayout>
 </RelativeLayout>

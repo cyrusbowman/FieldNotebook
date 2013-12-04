@@ -22,7 +22,7 @@ import com.openatk.fieldnotebook.db.TableNotes;
 import com.openatk.fieldnotebook.drawing.MyMarker;
 import com.openatk.fieldnotebook.drawing.MyPolygon;
 import com.openatk.fieldnotebook.drawing.MyPolyline;
-import com.openatk.fieldnotebook.slider.SliderListener;
+import com.openatk.fieldnotebook.sidebar.SidebarListener;
 
 import android.app.Activity;
 import android.app.AlertDialog;
@@ -135,13 +135,12 @@ public class FragmentFieldList extends Fragment {
 		FieldView newView = new FieldView();
 		newView.layField = (RelativeLayout) view.findViewById(R.id.field);
 		newView.tvName = (TextView) view.findViewById(R.id.field_txtName);
-		newView.tvAcres = (TextView) view.findViewById(R.id.field_txtAcres);
 		newView.row1 = (RelativeLayout) view.findViewById(R.id.field_row1);
 		newView.row2 = (RelativeLayout) view.findViewById(R.id.field_row2);
 		newView.field = field;
 		
 		newView.tvName.setText(field.getName());
-		newView.tvAcres.setText(Integer.toString(field.getAcres()) + " acres");
+//		newView.tvAcres.setText(Integer.toString(field.getAcres()) + " acres");
 		
 		newView.layField.setTag(newView);
 		newView.layField.setOnClickListener(fieldClickListener);

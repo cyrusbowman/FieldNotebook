@@ -384,7 +384,7 @@ public class MyPolygon {
 			paint.getTextBounds(label, 0, label.length(), bounds);
 			
 			Bitmap.Config conf = Bitmap.Config.ARGB_8888;
-			Bitmap bitmap = Bitmap.createBitmap(bounds.width() + 5, bounds.height(), conf); //TODO create blank new bitmap
+			Bitmap bitmap = Bitmap.createBitmap(bounds.width() + 5, bounds.height()+1, conf); //TODO create blank new bitmap
 			float x = 0;
 			float y = -1.0f * bounds.top + (bitmap.getHeight() * 0.06f);
 					

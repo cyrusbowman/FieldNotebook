@@ -5,31 +5,21 @@ import java.util.Date;
 import java.util.List;
 
 import android.app.AlertDialog;
-import android.content.BroadcastReceiver;
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
-import android.graphics.Point;
 import android.location.Location;
 import android.location.LocationManager;
-import android.net.ConnectivityManager;
-import android.net.NetworkInfo;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
-import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentTransaction;
-import android.text.Editable;
-import android.text.TextWatcher;
 import android.util.Log;
-import android.util.TypedValue;
-import android.view.Display;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -38,17 +28,12 @@ import android.view.View.OnClickListener;
 import android.view.WindowManager;
 import android.view.animation.Animation;
 import android.view.animation.Transformation;
-import android.view.inputmethod.InputMethodManager;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemSelectedListener;
-import android.widget.ArrayAdapter;
-import android.widget.EditText;
 import android.widget.FrameLayout;
 import android.widget.RelativeLayout;
-import android.widget.ScrollView;
-import android.widget.Spinner;
 import android.widget.Toast;
 
 import com.google.android.gms.maps.CameraUpdateFactory;
@@ -58,12 +43,9 @@ import com.google.android.gms.maps.GoogleMap.OnMarkerClickListener;
 import com.google.android.gms.maps.GoogleMap.OnMarkerDragListener;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.UiSettings;
-import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.CameraPosition;
 import com.google.android.gms.maps.model.LatLng;
-import com.google.android.gms.maps.model.LatLngBounds;
 import com.google.android.gms.maps.model.Marker;
-import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.PolygonOptions;
 import com.openatk.fieldnotebook.FragmentAddField.AddFieldListener;
 import com.openatk.fieldnotebook.db.DatabaseHelper;
@@ -77,34 +59,31 @@ import com.openatk.fieldnotebook.notelist.FragmentNoteList;
 import com.openatk.fieldnotebook.notelist.NoteListListener;
 import com.openatk.fieldnotebook.sidebar.FragmentSidebar;
 import com.openatk.fieldnotebook.sidebar.SidebarListener;
-import com.openatk.fieldnotebook.slider.FragmentSlider;
-import com.openatk.fieldnotebook.slider.SliderListener;
 
 public class MainActivity extends FragmentActivity implements OnClickListener,
-		OnMapClickListener, OnItemSelectedListener, OnMarkerClickListener, OnMarkerDragListener,
-		AddFieldListener, SliderListener, SidebarListener, NoteListListener, FieldListListener, MyPolygonListener {
-	
+OnMapClickListener, OnItemSelectedListener, OnMarkerClickListener, OnMarkerDragListener,
+AddFieldListener, SidebarListener, NoteListListener, FieldListListener, MyPolygonListener {
+
 	private static String TAG = MainActivity.class.getName();
-	
+
 	private SupportMapFragment fragmentMap;
 	private GoogleMap map;
 	private UiSettings mapSettings;
-	
-	
-    //Startup position
- 	private static final float START_LAT = 40.428712f;
- 	private static final float START_LNG = -86.913819f;
- 	private static final float START_ZOOM = 17.0f;
+
+
+	//Startup position
+	private static final float START_LAT = 40.428712f;
+	private static final float START_LNG = -86.913819f;
+	private static final float START_ZOOM = 17.0f;
 
 	private Menu menu;
 	private DatabaseHelper dbHelper;
-	
+
 	private int mCurrentState = 0;
-	
+
 	private int sliderIsShowing = 0;
 	private int addIsShowing = 0;
 	private int drawingIsShowing = 0;
-
 
 	@Override
 	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
@@ -133,38 +112,38 @@ public class MainActivity extends FragmentActivity implements OnClickListener,
 	private List<Field> FieldsOnMap = null;
 
 	String addingBoundary = "";
-	
+
 	FragmentAddField fragmentAddField = null;
-	FragmentSlider fragmentSlider = null;
+	FragmentSidebar fragmentSlider = null;
 	FragmentSidebar fragmentSidebar = null;
 	FragmentDrawing fragmentDrawing = null;
 	FragmentNoteList fragmentNoteList = null;
 	FragmentFieldList fragmentFieldList = null;
 
 	ViewGroup vgSidebar = null;
-	
-	
+
+
 	private static final int STATE_DEFAULT = 0;
 	private static final int STATE_LIST_VIEW = 1;
-	
+
 	//Trello
-    //SyncController syncController;
-    //TrelloController trelloController;
-	
+	//SyncController syncController;
+	//TrelloController trelloController;
+
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
-		
+
 		dbHelper = new DatabaseHelper(this);
-		
+
 		FragmentManager fm = getSupportFragmentManager();
 		fragmentMap = (SupportMapFragment) fm.findFragmentById(R.id.map);
-		fragmentSlider = (FragmentSlider) fm.findFragmentByTag(FragmentSlider.class.getName());
+		fragmentSlider = (FragmentSidebar) fm.findFragmentByTag(FragmentSidebar.class.getName());
 		if(fragmentSlider != null){
 			sliderIsShowing = 1;
 		}
-				
+
 		if (savedInstanceState == null) {
 			// First incarnation of this activity.
 			fragmentMap.setRetainInstance(true);
@@ -177,9 +156,9 @@ public class MainActivity extends FragmentActivity implements OnClickListener,
 		checkGPS();
 
 		//Trello
-        //trelloController = new TrelloController(getApplicationContext());
-        //syncController = new SyncController(getApplicationContext(), trelloController, this);
-        //trelloController.setSyncController(syncController);
+		//trelloController = new TrelloController(getApplicationContext());
+		//syncController = new SyncController(getApplicationContext(), trelloController, this);
+		//trelloController.setSyncController(syncController);
 
 		// Get last selected operation
 		if (savedInstanceState != null) {
@@ -187,7 +166,7 @@ public class MainActivity extends FragmentActivity implements OnClickListener,
 			currentField = FindFieldById(savedInstanceState.getInt("currentField"));
 			this.addingBoundary = savedInstanceState.getString("drawingBoundary", "");
 		}
-		
+
 		vgSidebar = (ViewGroup) findViewById(R.id.fragment_container_sidebar);
 		if (vgSidebar != null) {
 			Log.i(TAG, "onCreate: adding FragmentSidebar to MainActivity");
@@ -202,7 +181,7 @@ public class MainActivity extends FragmentActivity implements OnClickListener,
 		}
 
 		setUpMapIfNeeded();
-		
+
 		Intent intent = this.getIntent();
 		String todo = intent.getStringExtra("todo");
 		if(todo != null){
@@ -210,7 +189,7 @@ public class MainActivity extends FragmentActivity implements OnClickListener,
 				//trelloController.sync();
 			}
 		}
-		
+
 		getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN);
 	}
 
@@ -253,9 +232,9 @@ public class MainActivity extends FragmentActivity implements OnClickListener,
 				outState.putString("drawingBoundary", strNewBoundary);
 			}
 		}
-		
+
 		if (currentField != null) outState.putInt("currentField", currentField.getId());
-		
+
 		outState.putInt("mCurrentState", mCurrentState);
 		outState.putInt("sliderIsShowing",sliderIsShowing);
 		outState.putInt("addIsShowing",addIsShowing);
@@ -274,7 +253,7 @@ public class MainActivity extends FragmentActivity implements OnClickListener,
 			mapSettings.setZoomControlsEnabled(false);
 			mapSettings.setMyLocationButtonEnabled(false);
 			mapSettings.setTiltGesturesEnabled(false);
-			
+
 			map.setOnMapClickListener(this);
 			map.setOnMarkerClickListener(this);
 			map.setOnMarkerDragListener(this);
@@ -282,22 +261,22 @@ public class MainActivity extends FragmentActivity implements OnClickListener,
 			map.setMyLocationEnabled(true);
 
 			SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
-    		Float startLat = prefs.getFloat("StartupLat", START_LAT);
-    		Float startLng = prefs.getFloat("StartupLng", START_LNG);
-    		Float startZoom = prefs.getFloat("StartupZoom", START_ZOOM);
-    		map.moveCamera( CameraUpdateFactory.newLatLngZoom(new LatLng(startLat,startLng) , startZoom));
+			Float startLat = prefs.getFloat("StartupLat", START_LAT);
+			Float startLng = prefs.getFloat("StartupLng", START_LNG);
+			Float startZoom = prefs.getFloat("StartupZoom", START_ZOOM);
+			map.moveCamera( CameraUpdateFactory.newLatLngZoom(new LatLng(startLat,startLng) , startZoom));
 		}
 		drawMap();
 	}
 
-	
-	
+
+
 	@Override
 	protected void onPause() {
 		super.onPause();
-        //trelloController.stopAutoSync();
-		
-        CameraPosition myCam = map.getCameraPosition();
+		//trelloController.stopAutoSync();
+
+		CameraPosition myCam = map.getCameraPosition();
 		if(myCam != null){
 			SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
 			SharedPreferences.Editor editor = prefs.edit();
@@ -313,7 +292,7 @@ public class MainActivity extends FragmentActivity implements OnClickListener,
 	protected void onResume() {
 		super.onResume();
 		checkGPS();
-        //trelloController.startAutoSync();   
+		//trelloController.startAutoSync();   
 	}
 
 	@Override
@@ -327,13 +306,13 @@ public class MainActivity extends FragmentActivity implements OnClickListener,
 		}
 	}
 
-	
+
 	@Override
 	public void onMapClick(LatLng position) {
 		if(this.fragmentNoteList == null){
 			this.fragmentNoteList = this.getFragmentNoteList();
 		}
-		
+
 		if (addIsShowing == 1 || addingNotePolygon) {
 			Log.d("HERE", "Here1");
 			// Add points to polygon
@@ -351,7 +330,7 @@ public class MainActivity extends FragmentActivity implements OnClickListener,
 			if(fragmentSlider != null){
 				//fragmentSlider.flushChangesAndSave(false); //Save changes to all open notes
 			}
-			
+
 			// Check if touched a field
 			Boolean touched = false;
 			for (int i = 0; i < FieldsOnMap.size(); i++) {
@@ -395,7 +374,7 @@ public class MainActivity extends FragmentActivity implements OnClickListener,
 			}
 		}
 	}
-	
+
 	private void ExitField(){
 		if (this.currentPolygon != null) {
 			// Set back to unselected
@@ -405,7 +384,7 @@ public class MainActivity extends FragmentActivity implements OnClickListener,
 		if(this.fragmentNoteList == null) this.fragmentNoteList = this.getFragmentNoteList();
 		if(this.fragmentSidebar == null) this.fragmentSidebar = this.getFragmentSidebar();
 		if(this.fragmentFieldList == null) this.fragmentFieldList = this.getFragmentFieldList();
-		
+
 		if(this.fragmentNoteList != null) this.fragmentNoteList.onClose();
 		if(this.fragmentSidebar != null) this.fragmentSidebar.populateData(null, this.fragmentMap.getView());
 		if(this.fragmentFieldList != null) this.fragmentFieldList.populateData(null);
@@ -416,7 +395,7 @@ public class MainActivity extends FragmentActivity implements OnClickListener,
 		drawFields();
 	}
 
-	
+
 	private void drawFields() {
 		SQLiteDatabase database = dbHelper.getReadableDatabase();
 		String[] columns = { TableFields.COL_ID, TableFields.COL_BOUNDARY, TableFields.COL_NAME, TableFields.COL_DELETED };
@@ -426,9 +405,9 @@ public class MainActivity extends FragmentActivity implements OnClickListener,
 		while (cursor.moveToNext()) {
 			String boundary = cursor.getString(cursor.getColumnIndex(TableFields.COL_BOUNDARY));
 			List<LatLng> points = Field.StringToBoundary(boundary);
-			
+
 			if(points.size() == 0) points = null;
-			
+
 			// Add to list so we can catch click events
 			Field newField = new Field();
 			newField.setId(cursor.getInt(cursor.getColumnIndex(TableFields.COL_ID)));
@@ -521,50 +500,50 @@ public class MainActivity extends FragmentActivity implements OnClickListener,
 			}
 		} else if(item.getItemId() == R.id.main_menu_help){
 			AlertDialog.Builder alert = new AlertDialog.Builder(this);
-	        alert.setTitle("Help");
-	        WebView wv = new WebView(this);
-	        wv.loadUrl("file:///android_asset/Help.html");
-	        wv.getSettings().setSupportZoom(true);
-	        wv.getSettings().setBuiltInZoomControls(true);
-	        wv.setWebViewClient(new WebViewClient()
-	        {
-	            @Override
-	            public boolean shouldOverrideUrlLoading(WebView view, String url)
-	            {
-	                view.loadUrl(url);
-	                return true;
-	            }
-	        });
-	        alert.setView(wv);
-	        alert.setNegativeButton("Close", null);
-	        alert.show();
+			alert.setTitle("Help");
+			WebView wv = new WebView(this);
+			wv.loadUrl("file:///android_asset/Help.html");
+			wv.getSettings().setSupportZoom(true);
+			wv.getSettings().setBuiltInZoomControls(true);
+			wv.setWebViewClient(new WebViewClient()
+			{
+				@Override
+				public boolean shouldOverrideUrlLoading(WebView view, String url)
+				{
+					view.loadUrl(url);
+					return true;
+				}
+			});
+			alert.setView(wv);
+			alert.setNegativeButton("Close", null);
+			alert.show();
 		} else if(item.getItemId() == R.id.main_menu_legal){
 			CharSequence licence= "The MIT License (MIT)\n" +
-	                "\n" +
-	                "Copyright (c) 2013 Purdue University\n" +
-	                "\n" +
-	                "Permission is hereby granted, free of charge, to any person obtaining a copy " +
-	                "of this software and associated documentation files (the \"Software\"), to deal " +
-	                "in the Software without restriction, including without limitation the rights " +
-	                "to use, copy, modify, merge, publish, distribute, sublicense, and/or sell " +
-	                "copies of the Software, and to permit persons to whom the Software is " +
-	                "furnished to do so, subject to the following conditions:" +
-	                "\n" +
-	                "The above copyright notice and this permission notice shall be included in " +
-	                "all copies or substantial portions of the Software.\n" +
-	                "\n" +
-	                "THE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR " +
-	                "IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, " +
-	                "FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE " +
-	                "AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER " +
-	                "LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, " +
-	                "OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN " +
-	                "THE SOFTWARE.\n";
+					"\n" +
+					"Copyright (c) 2013 Purdue University\n" +
+					"\n" +
+					"Permission is hereby granted, free of charge, to any person obtaining a copy " +
+					"of this software and associated documentation files (the \"Software\"), to deal " +
+					"in the Software without restriction, including without limitation the rights " +
+					"to use, copy, modify, merge, publish, distribute, sublicense, and/or sell " +
+					"copies of the Software, and to permit persons to whom the Software is " +
+					"furnished to do so, subject to the following conditions:" +
+					"\n" +
+					"The above copyright notice and this permission notice shall be included in " +
+					"all copies or substantial portions of the Software.\n" +
+					"\n" +
+					"THE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR " +
+					"IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, " +
+					"FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE " +
+					"AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER " +
+					"LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, " +
+					"OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN " +
+					"THE SOFTWARE.\n";
 			new AlertDialog.Builder(this)
-				.setTitle("Legal")
-				.setMessage(licence)
-				.setIcon(android.R.drawable.ic_dialog_alert)
-				.setPositiveButton("Close", null).show();
+			.setTitle("Legal")
+			.setMessage(licence)
+			.setIcon(android.R.drawable.ic_dialog_alert)
+			.setPositiveButton("Close", null).show();
 		}
 		return true;
 	}
@@ -707,7 +686,7 @@ public class MainActivity extends FragmentActivity implements OnClickListener,
 		this.invalidateOptionsMenu();
 	}	
 
-	
+
 	private Void showSlider(Boolean transition) {
 		if(addIsShowing == 1){
 			hideAdd(false);
@@ -716,33 +695,43 @@ public class MainActivity extends FragmentActivity implements OnClickListener,
 			sliderIsShowing = 1;
 			// Set height back to wrap, in case add buttons or something
 			FrameLayout layout = (FrameLayout) findViewById(R.id.fragment_container_slider);
+			
 			if(layout != null){
-				RelativeLayout.LayoutParams params = (RelativeLayout.LayoutParams) layout.getLayoutParams();
-				params.height = RelativeLayout.LayoutParams.WRAP_CONTENT;
-				layout.setLayoutParams(params);
-				FragmentManager fm = getSupportFragmentManager();
-				this.fragmentSlider = new FragmentSlider();
-				FragmentTransaction ft = fm.beginTransaction();
-				if (transition) ft.setCustomAnimations(R.anim.slide_up, R.anim.slide_down);
-				ft.add(R.id.fragment_container_slider, this.fragmentSlider, FragmentSlider.class.getName());
-				ft.commit();
-				Log.d("MainActivity", "Showing Slider:" + FragmentSlider.class.getName());
+				if (fragmentSlider == null) {
+					RelativeLayout.LayoutParams params = (RelativeLayout.LayoutParams) layout.getLayoutParams();
+					params.height = RelativeLayout.LayoutParams.WRAP_CONTENT;
+					layout.setLayoutParams(params);
+					FragmentManager fm = getSupportFragmentManager();
+					this.fragmentSlider = new FragmentSidebar();
+					FragmentTransaction ft = fm.beginTransaction();
+					if (transition) ft.setCustomAnimations(R.anim.slide_up, R.anim.slide_down);
+					ft.add(R.id.fragment_container_slider, this.fragmentSlider, FragmentSidebar.class.getName());
+					ft.commit();
+				} else {
+					RelativeLayout.LayoutParams params = (RelativeLayout.LayoutParams) layout.getLayoutParams();
+					params.height = RelativeLayout.LayoutParams.WRAP_CONTENT;
+					layout.setLayoutParams(params);
+					FragmentManager fm = getSupportFragmentManager();
+					FragmentTransaction ft = fm.beginTransaction();
+					if (transition) ft.setCustomAnimations(R.anim.slide_up, R.anim.slide_down);
+					ft.show(this.fragmentSlider);
+					ft.commit();
+				} 
 			}
 		}
 		this.invalidateOptionsMenu();
 		return null;
 	}
 
-	private void hideSlider(Boolean transition) {
+	void hideSlider(Boolean transition) {
 		if (sliderIsShowing == 1) {
 			sliderIsShowing = 0;
 			if(fragmentNoteList == null){
 				this.fragmentNoteList = this.getFragmentNoteList();
 			}
-			if(fragmentNoteList != null) fragmentNoteList.onClose();
-			
+			//if(fragmentNoteList != null) fragmentNoteList.onClose();			
 			FragmentManager fm = getSupportFragmentManager();
-			FragmentSlider fragment = (FragmentSlider) fm.findFragmentByTag(FragmentSlider.class.getName());
+			FragmentSidebar fragment = (FragmentSidebar) fm.findFragmentByTag(FragmentSidebar.class.getName());
 			// Set height so transition works TODO 3 different heights?? Get from fragment, fragment.getMyHeight?
 			FrameLayout layout = (FrameLayout) findViewById(R.id.fragment_container_slider);
 			if(layout != null){
@@ -753,16 +742,16 @@ public class MainActivity extends FragmentActivity implements OnClickListener,
 				// Do transition
 				FragmentTransaction ft = fm.beginTransaction();
 				if (transition) ft.setCustomAnimations(R.anim.slide_up, R.anim.slide_down);
-				ft.remove(fragment);
+				ft.hide(fragment);
 				ft.commit();
 			}
-			fragmentSlider = null;
+			//			fragmentSlider = null;
 		}
 		this.invalidateOptionsMenu();
 	}	
-	
-	
-	
+
+
+
 	@Override
 	public Field AddFieldGetCurrentField() {
 		return this.currentField;
@@ -774,7 +763,7 @@ public class MainActivity extends FragmentActivity implements OnClickListener,
 	}
 
 	@Override
-	public void AddFieldDone(String name, Integer acres) {
+	public void AddFieldDone(String name) {
 		// Check if field name is valid and doesn't exist already
 		if (name.length() == 0) {
 			// Tell them to input a name
@@ -790,7 +779,7 @@ public class MainActivity extends FragmentActivity implements OnClickListener,
 				this.currentPolygon.complete();
 				this.currentPolygon.setLabel(name, true);
 				this.currentPolygon.setFillColor(Field.FILL_COLOR_NOT_PLANNED);
-				
+
 				List<LatLng> points = this.currentPolygon.getPoints();
 				Boolean wasAnEdit = false;
 				if (currentField == null) {
@@ -800,9 +789,9 @@ public class MainActivity extends FragmentActivity implements OnClickListener,
 					wasAnEdit = true;
 				}
 				currentField.setName(name);
-				currentField.setAcres(acres);
+				//				currentField.setAcres(acres);
 
-				Log.d("MainActivity", "Acres:" + Integer.toString(acres));
+				//				Log.d("MainActivity", "Acres:" + Integer.toString(acres));
 				String strNewBoundary = "";
 				if(points != null && points.isEmpty() == false){
 					// Generate boundary
@@ -822,9 +811,9 @@ public class MainActivity extends FragmentActivity implements OnClickListener,
 
 				ContentValues values = new ContentValues();
 				values.put(TableFields.COL_NAME, currentField.getName());
-				values.put(TableFields.COL_ACRES, currentField.getAcres());
+//				values.put(TableFields.COL_ACRES, currentField.getAcres());
 				values.put(TableFields.COL_BOUNDARY, strNewBoundary);
-				
+
 				//TODO only update if something changed
 				values.put(TableFields.COL_HAS_CHANGED, 1);
 				values.put(TableFields.COL_DATE_CHANGED, DatabaseHelper.dateToStringUTC(new Date()));
@@ -839,7 +828,7 @@ public class MainActivity extends FragmentActivity implements OnClickListener,
 							values,
 							TableFields.COL_ID + " = "
 									+ Integer.toString(currentField.getId()),
-							null);
+									null);
 				}
 				dbHelper.close();
 
@@ -853,14 +842,14 @@ public class MainActivity extends FragmentActivity implements OnClickListener,
 						if (FieldsOnMap.get(i).getId() == currentField.getId()) {
 							FieldsOnMap.get(i).setName(name);
 							FieldsOnMap.get(i).setPolygon(this.currentPolygon);
-							FieldsOnMap.get(i).setAcres(acres);
+							//							FieldsOnMap.get(i).setAcres(acres);
 							FieldsOnMap.get(i).setBoundary(points);
 						}
 					}
 				}
-				
+
 				showSlider(true);
-				
+
 				// add or update in list view
 				//if (this.fragmentListView != null) this.fragmentListView.getData();
 				//this.trelloController.syncDelayed();
@@ -880,7 +869,7 @@ public class MainActivity extends FragmentActivity implements OnClickListener,
 			values.put(TableFields.COL_DATE_CHANGED, DatabaseHelper.dateToStringUTC(new Date()));
 			String where = TableFields.COL_ID + " = "+ Integer.toString(currentField.getId());
 			database.update(TableFields.TABLE_NAME, values, where, null);
-			
+
 			dbHelper.close();
 			for(int i=0; i<FieldsOnMap.size(); i++){
 				if(FieldsOnMap.get(i).getId() == currentField.getId()){
@@ -898,7 +887,7 @@ public class MainActivity extends FragmentActivity implements OnClickListener,
 		hideAdd(true);
 		//if (this.fragmentListView != null) this.fragmentListView.getData();
 	}
-	
+
 	private Field FindFieldByName(String name) {
 		if (name != null) {
 			SQLiteDatabase database = dbHelper.getReadableDatabase();
@@ -980,30 +969,30 @@ public class MainActivity extends FragmentActivity implements OnClickListener,
 	@Override
 	public void MyPolygonUpdateAcres(Float acres) {
 		if(this.fragmentAddField != null){
-			this.fragmentAddField.autoAcres(acres);
+			//			this.fragmentAddField.autoAcres(acres);
 		}
 	}
-	
+
 	private void checkGPS(){
 		final LocationManager manager = (LocationManager) getSystemService( Context.LOCATION_SERVICE );
-	    if ( !manager.isProviderEnabled( LocationManager.GPS_PROVIDER ) ) {
-	        buildAlertMessageNoGps();
-	    }
+		if ( !manager.isProviderEnabled( LocationManager.GPS_PROVIDER ) ) {
+			buildAlertMessageNoGps();
+		}
 	}
 	private void buildAlertMessageNoGps() {
 		final AlertDialog.Builder builder = new AlertDialog.Builder(this);
 		builder.setMessage("Your GPS seems to be disabled, do you want to enable it?")
-		       .setCancelable(false)
-		       .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
-		           public void onClick(@SuppressWarnings("unused") final DialogInterface dialog, @SuppressWarnings("unused") final int id) {
-		               startActivity(new Intent(android.provider.Settings.ACTION_LOCATION_SOURCE_SETTINGS));
-		           }
-		       })
-		       .setNegativeButton("No", new DialogInterface.OnClickListener() {
-		           public void onClick(final DialogInterface dialog, @SuppressWarnings("unused") final int id) {
-		                dialog.cancel();
-		           }
-		       });
+		.setCancelable(false)
+		.setPositiveButton("Yes", new DialogInterface.OnClickListener() {
+			public void onClick(@SuppressWarnings("unused") final DialogInterface dialog, @SuppressWarnings("unused") final int id) {
+				startActivity(new Intent(android.provider.Settings.ACTION_LOCATION_SOURCE_SETTINGS));
+			}
+		})
+		.setNegativeButton("No", new DialogInterface.OnClickListener() {
+			public void onClick(final DialogInterface dialog, @SuppressWarnings("unused") final int id) {
+				dialog.cancel();
+			}
+		});
 		final AlertDialog alert = builder.create();
 		alert.show();
 	}
@@ -1015,9 +1004,9 @@ public class MainActivity extends FragmentActivity implements OnClickListener,
 
 	@Override
 	public void onNothingSelected(AdapterView<?> arg0) {
-		
+
 	}
-	
+
 	// --------------------------------- FragmentNoteList ----------------------------------
 	private MyPolygon saveFieldPolygon = null;
 	private Boolean addingNotePolygon = false;
@@ -1027,13 +1016,25 @@ public class MainActivity extends FragmentActivity implements OnClickListener,
 	}
 	
 	@Override
+	public void NoteListUpdatePolygon(int fieldId, PolygonOptions polygonOptions){
+		for(int i=0; i<FieldsOnMap.size(); i++){
+			if(FieldsOnMap.get(i).getId() == fieldId){
+				FieldsOnMap.get(i).getPolygon().remove();
+				FieldsOnMap.get(i).setPolygon(new MyPolygon(map, map.addPolygon(polygonOptions), this));
+				FieldsOnMap.get(i).getPolygon().setLabel(FieldsOnMap.get(i).getName(), true);
+				break;
+			}
+		}	
+	}
+	
+	@Override
 	public void NoteListAddPolygon() {
 		// Add note polygon
 		addingNotePolygon = true;
 		saveFieldPolygon = this.currentPolygon;
 		this.currentPolygon = new MyPolygon(map, this);
 	}
-	
+
 	@Override
 	public void NoteListEditPolygon(MyPolygon poly) {
 		// Add note polygon
@@ -1041,7 +1042,7 @@ public class MainActivity extends FragmentActivity implements OnClickListener,
 		saveFieldPolygon = this.currentPolygon;
 		this.currentPolygon = poly;
 	}
-	
+
 	@Override
 	public void NoteListCompletePolygon(){
 		addingNotePolygon = false;
@@ -1057,7 +1058,7 @@ public class MainActivity extends FragmentActivity implements OnClickListener,
 		this.currentPolygon = saveFieldPolygon;
 		saveFieldPolygon = null;
 	}
-	
+
 	@Override
 	public void NoteListRequestData(FragmentNoteList requester) {
 		if(requester != null) this.fragmentNoteList = requester;
@@ -1086,14 +1087,14 @@ public class MainActivity extends FragmentActivity implements OnClickListener,
 
 	@Override
 	public void NoteListAddNote() {
-		
+
 	}
-	
+
 	// ----------------------------- FragmentSlider -------------------------------
 
-	private FragmentSlider getFragmentSlider(){
+	private FragmentSidebar getFragmentSlider(){
 		FragmentManager fm = getSupportFragmentManager();
-		return (FragmentSlider) fm.findFragmentByTag(FragmentSlider.class.getName());
+		return (FragmentSidebar) fm.findFragmentByTag(FragmentSidebar.class.getName());
 	}
 
 	@Override
@@ -1113,11 +1114,11 @@ public class MainActivity extends FragmentActivity implements OnClickListener,
 			}
 		}
 	}
-	
+
 	@Override
 	public void SliderEditField() {
 		showAdd(true);
-		
+
 		// Edit this fields points
 		if(this.currentPolygon == null){
 			this.currentPolygon = new MyPolygon(map, this);
@@ -1125,40 +1126,40 @@ public class MainActivity extends FragmentActivity implements OnClickListener,
 			this.currentPolygon.edit();
 		}
 	}
-	
+
 	public class DropDownAnim extends Animation {
-	    int targetHeight;
-	    int startHeight;
-	    View view;
-	    boolean down;
+		int targetHeight;
+		int startHeight;
+		View view;
+		boolean down;
 
-	    public DropDownAnim(View view, int startHeight, int targetHeight) {
-	        this.view = view;
-	        this.startHeight = startHeight;
-	        this.targetHeight = targetHeight;
-	    }
+		public DropDownAnim(View view, int startHeight, int targetHeight) {
+			this.view = view;
+			this.startHeight = startHeight;
+			this.targetHeight = targetHeight;
+		}
 
-	    @Override
-	    protected void applyTransformation(float interpolatedTime, Transformation t) {
-	        int newHeight = (int) (startHeight - ((startHeight - targetHeight) * interpolatedTime));
-	        view.getLayoutParams().height = newHeight;
-	        view.requestLayout();
-	    }
+		@Override
+		protected void applyTransformation(float interpolatedTime, Transformation t) {
+			int newHeight = (int) (startHeight - ((startHeight - targetHeight) * interpolatedTime));
+			view.getLayoutParams().height = newHeight;
+			view.requestLayout();
+		}
 
-	    @Override
-	    public void initialize(int width, int height, int parentWidth,
-	            int parentHeight) {
-	        super.initialize(width, height, parentWidth, parentHeight);
-	    }
+		@Override
+		public void initialize(int width, int height, int parentWidth,
+				int parentHeight) {
+			super.initialize(width, height, parentWidth, parentHeight);
+		}
 
-	    @Override
-	    public boolean willChangeBounds() {
-	        return true;
-	    }
+		@Override
+		public boolean willChangeBounds() {
+			return true;
+		}
 	}
 
 	@Override
-	public void SliderRequestData(FragmentSlider requester) {
+	public void SliderRequestData(FragmentSidebar requester) {
 		if(requester != null) this.fragmentSlider = requester;
 		if(this.fragmentSlider == null){
 			this.fragmentSlider = this.getFragmentSlider();
@@ -1175,7 +1176,7 @@ public class MainActivity extends FragmentActivity implements OnClickListener,
 		FragmentManager fm = getSupportFragmentManager();
 		return (FragmentSidebar) fm.findFragmentByTag(FragmentSidebar.class.getName());
 	}
-	
+
 	@Override
 	public void SidebarAddNote() {
 		Log.d("MainActivity", "Sidebar Add Note");
@@ -1193,7 +1194,7 @@ public class MainActivity extends FragmentActivity implements OnClickListener,
 			}
 		}
 	}
-	
+
 	@Override
 	public void SidebarAddField() {
 		this.addFieldMapView();
@@ -1212,12 +1213,12 @@ public class MainActivity extends FragmentActivity implements OnClickListener,
 			Log.d("MainActivity", "this.fragmentSidebar is null");
 		}
 	}
-	
+
 	@Override
 	public void SidebarEditField() {
 		this.SliderEditField();
 	}
-	
+
 	@Override
 	public void SidebarBackToFieldsList() {
 		if(this.fragmentSidebar == null){
@@ -1225,13 +1226,13 @@ public class MainActivity extends FragmentActivity implements OnClickListener,
 		}
 		ExitField();
 	}
-	
+
 	// ----------------------------- FragmentFieldList -------------------------------
 	private FragmentFieldList getFragmentFieldList(){
 		FragmentManager fm = getSupportFragmentManager();
 		return (FragmentFieldList) fm.findFragmentByTag(FragmentFieldList.class.getName());
 	}
-	
+
 	@Override
 	public void FieldListRequestData(FragmentFieldList requester) {
 		if(requester != null) this.fragmentFieldList = requester;
@@ -1250,7 +1251,7 @@ public class MainActivity extends FragmentActivity implements OnClickListener,
 	@Override
 	public void FieldListAddNote() {
 		// TODO Auto-generated method stub
-		
+
 	}
 
 	@Override
@@ -1259,7 +1260,5 @@ public class MainActivity extends FragmentActivity implements OnClickListener,
 		this.SidebarRequestData(null);
 		this.NoteListRequestData(null); //Populate notes again
 	}
-
-
 }
 

@@ -10,7 +10,7 @@
         android:id="@+id/note_open_note"
 	    android:layout_width="match_parent"
 	    android:layout_height="match_parent"
-	    android:layout_alignParentTop="true"
+	    android:layout_alignParentBottom="true"
 	    android:layout_alignParentLeft="true">
 	    <RelativeLayout
 	        android:id="@+id/note_open_row1"

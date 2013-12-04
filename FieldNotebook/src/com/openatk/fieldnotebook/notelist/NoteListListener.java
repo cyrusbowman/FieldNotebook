@@ -1,6 +1,8 @@
 package com.openatk.fieldnotebook.notelist;
 
+import com.google.android.gms.maps.model.PolygonOptions;
 import com.openatk.fieldnotebook.FragmentDrawing;
+import com.openatk.fieldnotebook.db.Field;
 import com.openatk.fieldnotebook.drawing.MyPolygon;
 
 /**
@@ -25,5 +27,5 @@ public interface NoteListListener {
 	public FragmentDrawing NoteListShowDrawing();
 	public void NoteListHideDrawing();
 	public void NoteListAddNote();
-
+	public void NoteListUpdatePolygon(int fieldId, PolygonOptions polygonOptions);
 }

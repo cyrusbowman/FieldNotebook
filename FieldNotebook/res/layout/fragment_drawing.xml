@@ -1,80 +1,81 @@
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:clickable="true"
-    android:background="#EEE">
+    android:background="#EEE"
+    android:clickable="true" >
+
     <RelativeLayout
         android:id="@+id/fragment_drawing_row1"
-	    android:layout_width="match_parent"
-	    android:layout_height="wrap_content"
-	    android:layout_alignParentTop="true"
-	    android:layout_marginTop="5dp"
-	    android:layout_marginBottom="5dp">
-	    <LinearLayout
-	        android:layout_width="match_parent"
-	        android:layout_height="wrap_content"
-	        android:layout_alignParentTop="true"
-	        android:orientation="horizontal">
-	        <RelativeLayout
-	            android:layout_width="wrap_content"
-	        	android:layout_height="wrap_content"
-	        	android:layout_weight="1">
-	            <ImageButton 
-		            android:id="@+id/fragment_drawing_butPoint"
-			        android:layout_width="80dp"
-			        android:layout_height="80dp"
-			        android:layout_centerInParent="true"
-			        android:src="@drawable/add_point_v1"
-			        />
-	        </RelativeLayout>
-		   <RelativeLayout
-	            android:layout_width="wrap_content"
-	        	android:layout_height="wrap_content"
-	        	android:layout_weight="1">
-			    <ImageButton 
-		            android:id="@+id/fragment_drawing_butLine"
-			        android:layout_width="80dp"
-			        android:layout_height="80dp"
-					android:layout_centerInParent="true"
-					android:src="@drawable/add_line_v1"
-		           	/>
-			</RelativeLayout>
-			<RelativeLayout
-	            android:layout_width="wrap_content"
-	        	android:layout_height="wrap_content"
-	        	android:layout_weight="1">
-			    <ImageButton 
-		            android:id="@+id/fragment_drawing_butPolygon"
-			        android:layout_width="80dp"
-			        android:layout_height="80dp"
-			        android:layout_centerInParent="true"
-			        android:src="@drawable/add_polygon"
-		           	/>
-			</RelativeLayout>
-			<RelativeLayout
-	            android:layout_width="wrap_content"
-	        	android:layout_height="wrap_content"
-	        	android:layout_weight="1">
-			    <ImageButton 
-		            android:id="@+id/fragment_drawing_butColor"
-			        android:layout_width="80dp"
-			        android:layout_height="80dp"
-			        android:layout_centerInParent="true"
-			        android:src="@drawable/select_color"
-		           	/>
-			</RelativeLayout>
-			<RelativeLayout
-	            android:layout_width="wrap_content"
-	        	android:layout_height="wrap_content"
-	        	android:layout_weight="1">
-			    <ImageButton 
-		            android:id="@+id/fragment_drawing_butPicture"
-			        android:layout_width="80dp"
-			        android:layout_height="80dp"
-			        android:layout_centerInParent="true"
-			        android:src="@drawable/select_color"
-		           	/>
-			</RelativeLayout>
-		</LinearLayout>
-   </RelativeLayout>
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentTop="true"
+        android:layout_marginBottom="5dp"
+        android:layout_marginTop="5dp" >
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_alignParentTop="true"
+            android:orientation="horizontal" >
+
+            <RelativeLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_weight="1" >
+
+                <ImageButton
+                    android:id="@+id/fragment_drawing_butPoint"
+                    android:layout_width="80dp"
+                    android:layout_height="80dp"
+                    android:layout_centerInParent="true"
+                    android:src="@drawable/add_point_v1" />
+            </RelativeLayout>
+
+            <RelativeLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_weight="1" >
+
+                <ImageButton
+                    android:id="@+id/fragment_drawing_butLine"
+                    android:layout_width="80dp"
+                    android:layout_height="80dp"
+                    android:layout_centerInParent="true"
+                    android:src="@drawable/add_line_v1" />
+            </RelativeLayout>
+
+            <RelativeLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_weight="1" >
+
+                <ImageButton
+                    android:id="@+id/fragment_drawing_butPolygon"
+                    android:layout_width="80dp"
+                    android:layout_height="80dp"
+                    android:layout_centerInParent="true"
+                    android:src="@drawable/add_polygon" />
+            </RelativeLayout>
+
+            <RelativeLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_weight="1" >
+
+                <RelativeLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1" >
+
+                    <ImageButton
+                        android:id="@+id/note_take_picture"
+                        android:layout_width="80dp"
+                        android:layout_height="80dp"
+                        android:layout_centerInParent="true"
+                        android:src="@drawable/device_access_camera" />
+                </RelativeLayout>
+            </RelativeLayout>
+        </LinearLayout>
+    </RelativeLayout>
+
 </RelativeLayout>
