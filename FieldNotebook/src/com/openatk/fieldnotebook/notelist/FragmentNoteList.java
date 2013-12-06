@@ -193,6 +193,7 @@ public class FragmentNoteList extends Fragment implements OnClickListener, Drawi
 			//TODO handle edit finish? Maybe not, i think i removed on edit?
 			newPolygon.setStrokeColor(Field.STROKE_COLOR);
 			currentNote.addMyPolygon(newPolygon); //Adds a mypolygon
+			currentNote.setColor(currentNote.getColor());
 		}
 	}
 	
@@ -233,12 +234,71 @@ public class FragmentNoteList extends Fragment implements OnClickListener, Drawi
 		paint.setTextSize(20);
 		paint.setStrokeWidth(20);
 		
-		
-		
 		//Bitmap.Config conf = Bitmap.Config.ARGB_8888;
 		//Bitmap bitmap = Bitmap.createBitmap(bounds.width() + 5, bounds.height(), conf); //TODO create blank new bitmap
-
+		if(note.getVisible() == 1){
+			addNoteObjects(note);
+		} else {
+			removeNoteObjects(note);
+		}
+		noteView.imgColor.setBackgroundColor(note.getColor());
 		
+		//Show icon and draw number on icon
+		Integer numberOfPolygons = note.getPolygons().size();
+		if(numberOfPolygons == 0){
+			noteView.imgPolygons.setVisibility(View.GONE);
+		} else {
+			noteView.imgPolygons.setVisibility(View.VISIBLE);
+			String label = Integer.toString(numberOfPolygons);
+			Bitmap bitmap = decodeMutableBitmapFromResourceId(this.getActivity(), R.drawable.polygon);
+			Rect bounds = new Rect();
+			paint.getTextBounds(label, 0, label.length(), bounds);
+			float x = bitmap.getWidth() - 2.0f;
+			float y = -1.0f * bounds.top + (bitmap.getHeight() * 0.06f);
+			Canvas canvas = new Canvas(bitmap);
+			canvas.drawText(label, x, y, paint);
+			BitmapDrawable ob = new BitmapDrawable(getResources(), bitmap);
+			noteView.imgPolygons.setBackgroundDrawable(ob);
+		}
+		Integer numberOfPolylines = note.getPolylines().size();
+		if(numberOfPolylines == 0){
+			noteView.imgLines.setVisibility(View.GONE);
+		} else {
+			noteView.imgLines.setVisibility(View.VISIBLE);
+			String label = Integer.toString(numberOfPolylines);
+			Bitmap bitmap = decodeMutableBitmapFromResourceId(this.getActivity(), R.drawable.line_v1);
+			Rect bounds = new Rect();
+			paint.getTextBounds(label, 0, label.length(), bounds);
+			float x = bitmap.getWidth() - 2.0f;
+			float y = -1.0f * bounds.top + (bitmap.getHeight() * 0.06f);
+			Canvas canvas = new Canvas(bitmap);
+			canvas.drawText(label, x, y, paint);
+			BitmapDrawable ob = new BitmapDrawable(getResources(), bitmap);
+			noteView.imgLines.setBackgroundDrawable(ob);
+		}
+		Integer numberOfPoints = note.getMarkers().size();
+		if(numberOfPoints == 0){
+			noteView.imgPoints.setVisibility(View.GONE);
+		} else {
+			noteView.imgPoints.setVisibility(View.VISIBLE);
+			String label = Integer.toString(numberOfPoints);
+			Bitmap bitmap = decodeMutableBitmapFromResourceId(this.getActivity(), R.drawable.point);
+			Rect bounds = new Rect();
+			paint.getTextBounds(label, 0, label.length(), bounds);
+			float x = bitmap.getWidth() - 2.0f;
+			float y = -1.0f * bounds.top + (bitmap.getHeight() * 0.06f);
+			Canvas canvas = new Canvas(bitmap);
+			canvas.drawText(label, x, y, paint);
+			BitmapDrawable ob = new BitmapDrawable(getResources(), bitmap);
+			noteView.imgPoints.setBackgroundDrawable(ob);
+		}
+		
+		noteView.me = view;
+		view.setTag(noteView);
+		return view;
+	}
+	
+	private void addNoteObjects(Note note){
 		//Add polygons from note to map
 		List<MyPolygon> myPolygons = note.getMyPolygons();
 		if(myPolygons.isEmpty()){
@@ -277,69 +337,38 @@ public class FragmentNoteList extends Fragment implements OnClickListener, Drawi
 			}
 		}
 		note.setColor(note.getColor());
-		noteView.imgColor.setBackgroundColor(note.getColor());
-		
-		//Show icon and draw number on icon
-		Integer numberOfPolygons = note.getMyPolygons().size();
-		if(numberOfPolygons == 0){
-			noteView.imgPolygons.setVisibility(View.GONE);
-		} else {
-			noteView.imgPolygons.setVisibility(View.VISIBLE);
-			String label = Integer.toString(numberOfPolygons);
-			Bitmap bitmap = decodeMutableBitmapFromResourceId(this.getActivity(), R.drawable.polygon);
-			Rect bounds = new Rect();
-			paint.getTextBounds(label, 0, label.length(), bounds);
-			float x = bitmap.getWidth() - 2.0f;
-			float y = -1.0f * bounds.top + (bitmap.getHeight() * 0.06f);
-			Canvas canvas = new Canvas(bitmap);
-			canvas.drawText(label, x, y, paint);
-			BitmapDrawable ob = new BitmapDrawable(getResources(), bitmap);
-			noteView.imgPolygons.setBackgroundDrawable(ob);
-		}
-		Integer numberOfPolylines = note.getMyPolylines().size();
-		if(numberOfPolylines == 0){
-			noteView.imgLines.setVisibility(View.GONE);
-		} else {
-			noteView.imgLines.setVisibility(View.VISIBLE);
-			String label = Integer.toString(numberOfPolylines);
-			Bitmap bitmap = decodeMutableBitmapFromResourceId(this.getActivity(), R.drawable.line_v1);
-			Rect bounds = new Rect();
-			paint.getTextBounds(label, 0, label.length(), bounds);
-			float x = bitmap.getWidth() - 2.0f;
-			float y = -1.0f * bounds.top + (bitmap.getHeight() * 0.06f);
-			Canvas canvas = new Canvas(bitmap);
-			canvas.drawText(label, x, y, paint);
-			BitmapDrawable ob = new BitmapDrawable(getResources(), bitmap);
-			noteView.imgLines.setBackgroundDrawable(ob);
-		}
-		Integer numberOfPoints = note.getMyMarkers().size();
-		if(numberOfPoints == 0){
-			noteView.imgPoints.setVisibility(View.GONE);
-		} else {
-			noteView.imgPoints.setVisibility(View.VISIBLE);
-			String label = Integer.toString(numberOfPoints);
-			Bitmap bitmap = decodeMutableBitmapFromResourceId(this.getActivity(), R.drawable.point);
-			Rect bounds = new Rect();
-			paint.getTextBounds(label, 0, label.length(), bounds);
-			float x = bitmap.getWidth() - 2.0f;
-			float y = -1.0f * bounds.top + (bitmap.getHeight() * 0.06f);
-			Canvas canvas = new Canvas(bitmap);
-			canvas.drawText(label, x, y, paint);
-			BitmapDrawable ob = new BitmapDrawable(getResources(), bitmap);
-			noteView.imgPoints.setBackgroundDrawable(ob);
-		}
-		
-		noteView.me = view;
-		view.setTag(noteView);
-		return view;
 	}
-	
+	private void removeNoteObjects(Note note){
+		note.removePolygonsFromMap();
+		note.removePolylinesFromMap();
+		note.removeMarkersFromMap();
+		note.removePolygons();
+		note.removePolylines();
+		note.removeMarkers();
+	}
 	private OnClickListener noteClickListener = new OnClickListener(){
 		@Override
 		public void onClick(View v) {
+			Log.d("FragmentNoteList", "noteClickListener");
 			NoteView noteView = (NoteView) v.getTag();
 			if(v.getId() == R.id.note_butShowHide){
-				
+				Note note = noteView.note;
+				if(note.getVisible() == 1){
+					//Hide all things to do with this note
+					removeNoteObjects(note);
+					note.setVisible(0);
+					noteView.butShowHide.setImageResource(R.drawable.note_but_show);
+				} else {
+					addNoteObjects(note);
+					note.setVisible(1);
+					noteView.butShowHide.setImageResource(R.drawable.note_but_hide);
+				}
+				SQLiteDatabase database = dbHelper.getWritableDatabase();
+				ContentValues values = new ContentValues();
+				values.put(TableNotes.COL_VISIBLE,note.getVisible());
+				String where = TableNotes.COL_ID + " = " + note.getId();
+				database.update(TableNotes.TABLE_NAME, values, where, null);
+				database.close();
 			} else if(v.getId() == R.id.note_txtComment){ 
 				if(addingNote == false){
 					addingNote = true;
@@ -351,32 +380,36 @@ public class FragmentNoteList extends Fragment implements OnClickListener, Drawi
 				    if (inputMethodManager != null) {
 				        inputMethodManager.toggleSoftInput(InputMethodManager.SHOW_FORCED, 0);
 				    }
+				}  else {
+					OpenNoteDone();
 				}
 			} else if(v.getId() == R.id.note){
 				if(addingNote == false){
 					addingNote = true;
 					openNote(noteView);
+				} else {
+					OpenNoteDone();
 				}
 			}
 		}
-		
-		private OpenNoteView openNote(NoteView noteView){
-			svNotes.setScrollingEnabled(false);
-			svNotes.scrollToAfterAdd(noteView.me.getTop());
-			//Edit this note
-			int index = listNotes.indexOfChild(noteView.me);
-			currentNote = noteView.note;
-			listNotes.removeView(noteView.me);
-			View newView = inflateOpenNote(currentNote);
-			listNotes.addView(newView, index);
-			currentOpenNoteView = (OpenNoteView) newView.getTag();
-
-			//Show drawing fragment
-			fragmentDrawing = listener.NoteListShowDrawing();
-			fragmentDrawing.setListener(me);
-			return currentOpenNoteView;
-		}
 	};
+	
+	private OpenNoteView openNote(NoteView noteView){
+		//svNotes.setScrollingEnabled(false);
+		svNotes.scrollToAfterAdd(noteView.me.getTop());
+		//Edit this note
+		int index = listNotes.indexOfChild(noteView.me);
+		currentNote = noteView.note;
+		listNotes.removeView(noteView.me);
+		View newView = inflateOpenNote(currentNote);
+		listNotes.addView(newView, index);
+		currentOpenNoteView = (OpenNoteView) newView.getTag();
+
+		//Show drawing fragment
+		fragmentDrawing = listener.NoteListShowDrawing();
+		fragmentDrawing.setListener(me);
+		return currentOpenNoteView;
+	}
 	
 	static class NoteView
     {
@@ -399,13 +432,15 @@ public class FragmentNoteList extends Fragment implements OnClickListener, Drawi
 		noteView.layFullNote = (RelativeLayout) view.findViewById(R.id.note_open_note);
 		noteView.layImageView = (FrameLayout) view.findViewById(R.id.note_open_imageViewer);
 		noteView.layNote = (RelativeLayout) view.findViewById(R.id.note_open);
-		noteView.butDone = (ImageButton) view.findViewById(R.id.note_open_butDone);
 		noteView.butDelete = (ImageButton) view.findViewById(R.id.note_open_butDelete);
 		noteView.etComment = (EditText) view.findViewById(R.id.note_open_etComment);
 		noteView.layObjects = (LinearLayout) view.findViewById(R.id.note_open_lay_objects);
 		noteView.svObjects = (HorizontalScrollView) view.findViewById(R.id.note_open_sv_objects);
 
 		noteView.etComment.setText(note.getComment());
+		
+		
+		if(note.getVisible() == 0) addNoteObjects(note); //Add objects if they are hidden
 		
 		List<MyPolygon> polygons = note.getMyPolygons();
 		List<MyPolyline> polylines = note.getMyPolylines();
@@ -441,8 +476,9 @@ public class FragmentNoteList extends Fragment implements OnClickListener, Drawi
 				
 				float scale = getResources().getDisplayMetrics().density;
 				int dpAsPixels = (int) (7*scale + 0.5f); //Margin
-				LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-				layoutParams.setMargins(dpAsPixels, 0, dpAsPixels, 0);
+				int widthAndHeight = (int) (50*scale + 0.5f);
+				LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(widthAndHeight, widthAndHeight);
+				layoutParams.setMargins(dpAsPixels, 0, dpAsPixels, 0);				
 				noteView.layObjects.addView(img, layoutParams);
 			}
 		} else {
@@ -468,60 +504,63 @@ public class FragmentNoteList extends Fragment implements OnClickListener, Drawi
 		});*/
 		
 	
-		noteView.butDone.setTag(noteView);
 		noteView.butDelete.setTag(noteView);
-		
-		noteView.butDone.setOnClickListener(openNoteClickListener);
 		noteView.butDelete.setOnClickListener(openNoteClickListener);
 		noteView.me = view;
 		
 		view.setTag(noteView);
 		return view;
 	}
+	
+	private void OpenNoteDone(){
+		if(currentNote != null){
+			//svNotes.setScrollingEnabled(true);
+			if(addingPolygon){
+				fragmentDrawing.setPolygonIcon(R.drawable.add_polygon, false);
+				listener.NoteListCompletePolygon();
+				addingPolygon = false;
+			}
+			
+			if(addingPolyline){
+				if(currentPolyline != null) currentPolyline.complete();
+				map.setOnMapClickListener((OnMapClickListener) listener);
+				map.setOnMarkerClickListener((OnMarkerClickListener) listener);
+				map.setOnMarkerDragListener((OnMarkerDragListener) listener);
+				
+				//TODO handle edit finish? Maybe not, i think i removed on edit?
+				currentPolyline.setColor(Field.STROKE_COLOR);
+				currentNote.addMyPolyline(currentPolyline); //Adds a myPolyline
+					
+				fragmentDrawing.setPolylineIcon(R.drawable.add_line_v1, false);
+				addingPolyline = false;
+			}
+			
+			// hide virtual keyboard
+	        InputMethodManager imm =  (InputMethodManager)getActivity().getApplicationContext().getSystemService(Context.INPUT_METHOD_SERVICE);
+	        imm.hideSoftInputFromWindow(this.currentOpenNoteView.etComment.getWindowToken(), 0);
+	        
+			//Save the note
+			currentNote.setComment(this.currentOpenNoteView.etComment.getText().toString());
+			SaveNote(currentNote);
+			
+			//Close the note
+			int index = listNotes.indexOfChild(this.currentOpenNoteView.me);
+			listNotes.removeView(this.currentOpenNoteView.me);
+			listNotes.addView(inflateNote(currentNote), index);
+			
+			//Hide drawing fragment
+			listener.NoteListHideDrawing();
+			fragmentDrawing = null;
+			
+			currentNote = null;
+			this.addingNote = false;
+		}
+	}
 	private OnClickListener openNoteClickListener = new OnClickListener(){
 		@Override
 		public void onClick(View v) {
 			OpenNoteView noteView = (OpenNoteView) v.getTag();
-			if(v.getId() == R.id.note_open_butDone){
-				svNotes.setScrollingEnabled(true);
-
-				if(addingPolygon){
-					fragmentDrawing.setPolygonIcon(R.drawable.add_polygon);
-					listener.NoteListCompletePolygon();
-					addingPolygon = false;
-				}
-				
-				if(addingPolyline){
-					if(currentPolyline != null) currentPolyline.complete();
-					map.setOnMapClickListener((OnMapClickListener) listener);
-					map.setOnMarkerClickListener((OnMarkerClickListener) listener);
-					map.setOnMarkerDragListener((OnMarkerDragListener) listener);
-					
-					if(currentNote != null){
-						//TODO handle edit finish? Maybe not, i think i removed on edit?
-						currentPolyline.setColor(Field.STROKE_COLOR);
-						currentNote.addMyPolyline(currentPolyline); //Adds a myPolyline
-					}
-					fragmentDrawing.setPolylineIcon(R.drawable.add_line_v1);
-					addingPolygon = false;
-				}
-				
-				// hide virtual keyboard
-		        InputMethodManager imm =  (InputMethodManager)getActivity().getApplicationContext().getSystemService(Context.INPUT_METHOD_SERVICE);
-		        imm.hideSoftInputFromWindow(noteView.etComment.getWindowToken(), 0);
-		        
-				//Save the note
-				currentNote.setComment(noteView.etComment.getText().toString());
-				SaveNote(currentNote);
-				//Close the note
-				int index = listNotes.indexOfChild(noteView.me);
-				listNotes.removeView(noteView.me);
-				listNotes.addView(inflateNote(currentNote), index);
-				
-				//Hide drawing fragment
-				listener.NoteListHideDrawing();
-				fragmentDrawing = null;
-			} else if(v.getId() == R.id.note_open_butDelete){
+			if(v.getId() == R.id.note_open_butDelete){
 				
 			}
 		}
@@ -530,7 +569,6 @@ public class FragmentNoteList extends Fragment implements OnClickListener, Drawi
     {
 		RelativeLayout layFullNote;
 		FrameLayout layImageView;
-		ImageButton butDone;
 		ImageButton butDelete;
 		EditText etComment;
 		RelativeLayout layNote;
@@ -540,9 +578,7 @@ public class FragmentNoteList extends Fragment implements OnClickListener, Drawi
 		View me;
     }
 	
-	private void SaveNote(Note note){
-		addingNote = false;
-		
+	private void SaveNote(Note note){		
 		SQLiteDatabase database = dbHelper.getWritableDatabase();
 		ContentValues values = new ContentValues();
 		values.put(TableNotes.COL_COMMENT,note.getComment());
@@ -604,60 +640,95 @@ public class FragmentNoteList extends Fragment implements OnClickListener, Drawi
 	public void onMapClick(LatLng position){
 		Log.d("Here", "FragmentSlider - onMapClick");
 		//Check if clicked on any of current notes objects
-		if(this.currentNote != null){
-			//Loop through current notes polygons checking if touched
-			//Check if touched polyline
-			List<MyPolyline> polylines = this.currentNote.getMyPolylines();
-			MyPolyline touchedPolyline = null;
-			for(int i=0; i<polylines.size(); i++){
-				Log.d("Checking Polyline touch...", "Checking...");
-				if(polylines.get(i).wasTouched(position)){
-					Log.d("Checking Polyline touch == ", "TRUE");
-					touchedPolyline = polylines.get(i);
-					break;
+		if(this.currentNote == null){
+			Log.d("onMapClick", "currentNote is null");
+			//Loop through all notes checking if touched anything
+			for(int i=0; i< this.listNotes.getChildCount(); i++){
+				View view = this.listNotes.getChildAt(i);
+				NoteView noteView = (NoteView) view.getTag();
+				if(noteView != null){
+					Note note = noteView.note;
+					if(touchedPolylineInNote(note, position) != null || touchedPolygonInNote(note, position) != null){
+						//Find noteview in listnotes
+						//Open note
+						addingNote = true;
+						openNote(noteView);
+						//break;
+					}
 				}
 			}
+		} else {
+			Log.d("onMapClick", "Note is open checking if clicked note object");
+			//Loop through current notes polygons checking if touched
+			//Check if touched polyline
+			MyPolyline touchedPolyline = touchedPolylineInNote(this.currentNote, position);
 			if(touchedPolyline != null){
 				//Touched a polyline, edit it
 				touchedPolyline.edit();
 				if(this.currentOpenNoteView != null){
-					if(fragmentDrawing != null) fragmentDrawing.setPolylineIcon(R.drawable.close_line_v1);
+					if(fragmentDrawing != null) fragmentDrawing.setPolylineIcon(R.drawable.close_line_v1, true);
 				}
 				currentPolyline = touchedPolyline;
 				this.currentNote.removePolyline(touchedPolyline);
 				addingPolyline = true;
 			} else {
 				//Check if touched polygon
-				List<MyPolygon> polys = this.currentNote.getMyPolygons();
-				MyPolygon touchedPoly = null;
-				for(int i=0; i<polys.size(); i++){
-					if(polys.get(i).wasTouched(position)){
-						touchedPoly = polys.get(i);
-						break;
-					}
-				}
+				Log.d("onMapClick", "Checking if touched polygon");
+				MyPolygon touchedPoly = touchedPolygonInNote(this.currentNote, position);
 				if(touchedPoly != null){
+					Log.d("onMapClick", "Touched a polygon");
 					touchedPoly.edit();
 					if(this.currentOpenNoteView != null){
-						if(fragmentDrawing != null) fragmentDrawing.setPolygonIcon(R.drawable.close_polygon);
+						if(fragmentDrawing != null) fragmentDrawing.setPolygonIcon(R.drawable.close_polygon, true);
 					}
 					//Shouldn't recieve touch if already adding so this is fine
 					this.currentNote.removePolygon(touchedPoly);
 					listener.NoteListEditPolygon(touchedPoly);
 					addingPolygon = true;
+				} else {
+					Log.d("onMapClick", "Did not touch a polygon");
+					//Touched the map. Close current note
+					OpenNoteDone();
 				}
 			}
 		}
 	}
+	private MyPolygon touchedPolygonInNote(Note note, LatLng position){
+		//Check if touched polygon
+		List<MyPolygon> polys = note.getMyPolygons();
+		MyPolygon touchedPoly = null;
+		for(int i=0; i<polys.size(); i++){
+			if(polys.get(i).wasTouched(position)){
+				touchedPoly = polys.get(i);
+				break;
+			}
+		}
+		return touchedPoly;
+	}
+	private MyPolyline touchedPolylineInNote(Note note, LatLng position){
+		List<MyPolyline> polylines = note.getMyPolylines();
+		MyPolyline touchedPolyline = null;
+		for(int i=0; i<polylines.size(); i++){
+			if(polylines.get(i).wasTouched(position)){
+				touchedPolyline = polylines.get(i);
+				break;
+			}
+		}
+		return touchedPolyline;
+	}
+
 	
 	public void onClose(){
+		if(this.currentNote != null){
+			OpenNoteDone();
+		}
 		//Remove all notes polygons
 		Log.d("FragmentSlider", "onClose");
 		if(notes != null){
 			for(int i=0; i<notes.size(); i++){
-				notes.get(i).removePolygons();
-				notes.get(i).removePolylines();
-				notes.get(i).removeMarkers();
+				notes.get(i).removePolygonsFromMap();
+				notes.get(i).removePolylinesFromMap();
+				notes.get(i).removeMarkersFromMap();
 			}
 		}
 	}
@@ -693,15 +764,16 @@ public class FragmentNoteList extends Fragment implements OnClickListener, Drawi
 		return this.addingNote;
 	}
 	
-	private OnMapClickListener sliderMapClickListener = new OnMapClickListener(){
+	private OnMapClickListener noteListMapClickListener = new OnMapClickListener(){
 		@Override
 		public void onMapClick(LatLng arg0) {
+			Log.d("FragmentNoteList", "OnMapClick");
 			currentPoint = new MyMarker(map, arg0);
 			if(currentPoint != null){
 				currentNote.addMyMarker(currentPoint); //Adds a myPoint
 			}
 			map.setOnMapClickListener((OnMapClickListener) listener);
-			if(fragmentDrawing != null) fragmentDrawing.setPointIcon(R.drawable.add_point_v1);
+			if(fragmentDrawing != null) fragmentDrawing.setPointIcon(R.drawable.add_point_v1, false);
 			addingPoint = false;
 		}
 	};
@@ -709,12 +781,13 @@ public class FragmentNoteList extends Fragment implements OnClickListener, Drawi
 	@Override
 	public void DrawingClickPoint() {
 		if(addingPoint == false){
-			map.setOnMapClickListener(sliderMapClickListener);
-			fragmentDrawing.setPointIcon(R.drawable.cancel_point_v1);
+			map.setOnMapClickListener(noteListMapClickListener);
+			fragmentDrawing.setPointIcon(R.drawable.cancel_point_v1, true);
 			addingPoint = true;
 		} else {
 			map.setOnMapClickListener((OnMapClickListener) listener);
-			fragmentDrawing.setPointIcon(R.drawable.add_point_v1);
+			fragmentDrawing.setPointIcon(R.drawable.add_point_v1, false);
+			currentNote.setColor(currentNote.getColor());
 			addingPoint = false;
 		}		
 	}
@@ -724,7 +797,7 @@ public class FragmentNoteList extends Fragment implements OnClickListener, Drawi
 		if(addingPolyline == false){
 			currentPolyline = new MyPolyline(map);
 			currentPolyline.edit();
-			fragmentDrawing.setPolylineIcon(R.drawable.close_line_v1);
+			fragmentDrawing.setPolylineIcon(R.drawable.close_line_v1, true);
 			addingPolyline = true;
 		} else {
 			if(currentPolyline != null) currentPolyline.complete();
@@ -737,7 +810,8 @@ public class FragmentNoteList extends Fragment implements OnClickListener, Drawi
 				currentPolyline.setColor(Field.STROKE_COLOR);
 				currentNote.addMyPolyline(currentPolyline); //Adds a myPolyline
 			}
-			fragmentDrawing.setPolylineIcon(R.drawable.add_line_v1);
+			fragmentDrawing.setPolylineIcon(R.drawable.add_line_v1, false);
+			currentNote.setColor(currentNote.getColor());
 			addingPolyline = false;
 		}
 	}
@@ -745,12 +819,13 @@ public class FragmentNoteList extends Fragment implements OnClickListener, Drawi
 	@Override
 	public void DrawingClickPolygon() {
 		if(addingPolygon == false){
-			fragmentDrawing.setPolygonIcon(R.drawable.close_polygon);
+			fragmentDrawing.setPolygonIcon(R.drawable.close_polygon, true);
 			listener.NoteListAddPolygon();
 			addingPolygon = true;
 		} else {
-			fragmentDrawing.setPolygonIcon(R.drawable.add_polygon);
+			fragmentDrawing.setPolygonIcon(R.drawable.add_polygon, false);
 			listener.NoteListCompletePolygon();
+			currentNote.setColor(currentNote.getColor());
 			addingPolygon = false;
 		}		
 	}
@@ -809,6 +884,44 @@ public class FragmentNoteList extends Fragment implements OnClickListener, Drawi
         cameraIntent.putExtra(MediaStore.EXTRA_OUTPUT, outputFileUri);
         this.getActivity().startActivityForResult(cameraIntent, 999);
 	}
+	@Override
+	public void DrawingUndo() {
+		if(addingPolygon){
+			this.listener.NoteListUndoPolygon();
+		} else if(addingPolyline){
+			if(this.currentPolyline != null) this.currentPolyline.undo();
+		} else if(addingPoint){
+			//TODO tricky
+		}
+	}
+	@Override
+	public void DrawingDelete() {
+		Log.d("FragmentNoteList", "DrawingDelete");
+		if(addingPolygon){
+			Log.d("FragmentNoteList", "DrawingDelete Polygon");
+			this.listener.NoteListDeletePolygon();
+			fragmentDrawing.setPolygonIcon(R.drawable.add_polygon, false);
+			addingPolygon = false;
+		} else if(addingPolyline){
+			if(this.currentPolyline != null) { 
+				this.currentPolyline.delete();
+				currentNote.removePolyline(this.currentPolyline);
+				map.setOnMapClickListener((OnMapClickListener) listener);
+				map.setOnMarkerClickListener((OnMarkerClickListener) listener);
+				map.setOnMarkerDragListener((OnMarkerDragListener) listener);
+			}
+			fragmentDrawing.setPolylineIcon(R.drawable.add_line_v1, false);
+			addingPolyline = false;
+		} else if(addingPoint){
+			//TODO tricky
+		}
+	}
+	public void deletePolygon(MyPolygon poly){
+		//Called by MainActivity from NoteListDeletePolygon
+		if(this.currentNote != null){
+			this.currentNote.removePolygon(poly);
+		}
+	}
 	public void ImageCaptured(){
 		if(imagePath != null){
 			Log.d(TAG, "ImageCaptured");
@@ -820,7 +933,8 @@ public class FragmentNoteList extends Fragment implements OnClickListener, Drawi
 			
 			float scale = getResources().getDisplayMetrics().density;
 			int dpAsPixels = (int) (7*scale + 0.5f); //Margin
-			LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+			int widthAndHeight = (int) (50*scale + 0.5f);
+			LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(widthAndHeight, widthAndHeight);
 			layoutParams.setMargins(dpAsPixels, 0, dpAsPixels, 0);
 			
 			Drawable d = new BitmapDrawable(getResources(), thumb);
@@ -859,17 +973,31 @@ public class FragmentNoteList extends Fragment implements OnClickListener, Drawi
 			fragmentTransaction.commit();
 		}
 	};
+	public void ImageViewerRequestDataFullsize(FragmentImageViewer requester) {
+		if(this.currentNote != null){
+			requester.populateData(this.currentNote.getImages(), currentImage, 1);
+		}
+	}
 	@Override
 	public void ImageViewerRequestData(FragmentImageViewer requester) {
 		if(this.currentNote != null){
-			requester.populateData(this.currentNote.getImages(), currentImage);
+			requester.populateData(this.currentNote.getImages(), currentImage, 0);
 		}
 	}
 	@Override
 	public void ImageViewerDone(Image image) {
 		currentOpenNoteView.layFullNote.setVisibility(View.VISIBLE);
 		currentOpenNoteView.layImageView.setVisibility(View.GONE);
-		//currentOpenNoteView.me.setBackgroundResource(R.drawable.note);
+	}
+	@Override
+	public void ImageViewerClick(Image image) {
+		//Fullscreen
+		Log.d(TAG, "ImageViewerClick");
+		currentOpenNoteView.layFullNote.setVisibility(View.VISIBLE);
+		currentOpenNoteView.layImageView.setVisibility(View.GONE);
+		listener.NoteListShowImageViewer();
+		//TODO pass images
+		
 	}
 	public Boolean AddNote() {
 		if(addingNote == false){
@@ -885,9 +1013,13 @@ public class FragmentNoteList extends Fragment implements OnClickListener, Drawi
 			listNotes.addView(newView, 0);
 			listener.NoteListAddNote();
 			
+			currentOpenNoteView.etComment.requestFocus();
+			InputMethodManager inputMethodManager = (InputMethodManager) me.getActivity().getSystemService(Context.INPUT_METHOD_SERVICE);
+		    if (inputMethodManager != null) {
+		        inputMethodManager.toggleSoftInput(InputMethodManager.SHOW_FORCED, 0);
+		    }
+		    
 			svNotes.scrollTo(0, 0);
-			//InputMethodManager inputMethodManager = (InputMethodManager) this.getActivity().getSystemService(Context.INPUT_METHOD_SERVICE);
-			//inputMethodManager.showSoftInput(newOpenNote.etComment, 0);
 			
 			//Show drawing fragment
 			fragmentDrawing = listener.NoteListShowDrawing();

@@ -19,7 +19,7 @@ public class LinedEditText extends EditText {
         mRect = new Rect();
         mPaint = new Paint();
         mPaint.setStyle(Paint.Style.FILL_AND_STROKE);
-        mPaint.setColor(Color.BLACK); //SET YOUR OWN COLOR HERE
+        mPaint.setColor(Color.rgb(145, 145, 145));
     }
 
     @Override

@@ -99,11 +99,12 @@ public class MyPolygon {
 	// Custom functions
 	public void select() {
 		setStrokeColor(Field.STROKE_SELECTED);
-		selectLabel(true);
+		hideLabel();
 	}
 	public void unselect() {
+		Log.d("MyPoly", "Unselect");
 		setStrokeColor(Field.STROKE_COLOR);
-		selectLabel(false);
+		showLabel();
 	}
 	public void undo() {
 		// Remove selected marker
@@ -165,6 +166,9 @@ public class MyPolygon {
 	}
 
 	public Boolean onMarkerClick(Marker marker) {
+		if(textMarker != null && marker == textMarker){
+			return false;
+		}
 		Integer markerIndex = null;
 		for (int i = 0; i < markers.size(); i++) {
 			if (markers.get(i).equals(marker)) {
@@ -358,6 +362,15 @@ public class MyPolygon {
 		
 	}
 
+	public void hideLabel(){
+		if(this.textMarker != null) this.textMarker.remove();
+		this.textMarker = null;
+		Log.d("HideLabel:", textMarkerString);
+	}
+	public void showLabel(){
+		Log.d("ShowLabel:", textMarkerString);
+		if(this.textMarker == null) setLabel(textMarkerString, false);
+	}
 	public void setLabel(String label){
 		setLabel(label, false);
 	}
@@ -406,6 +419,7 @@ public class MyPolygon {
 			}
 
 			this.textMarker = map.addMarker(options.position(where).icon(BitmapDescriptorFactory.fromBitmap(bitmap)));
+			this.textMarker.setDraggable(false);
 		}
 	}
 	

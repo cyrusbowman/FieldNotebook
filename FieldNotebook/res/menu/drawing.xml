@@ -1,0 +1,14 @@
+<menu xmlns:android="http://schemas.android.com/apk/res/android" >
+    <item
+        android:id="@+id/menu_drawing_undo"
+        android:orderInCategory="100"
+        android:showAsAction="always"
+        android:icon="@drawable/delete_vertex"
+        android:title="Undo"/>
+    <item
+        android:id="@+id/menu_drawing_delete"
+        android:orderInCategory="100"
+        android:showAsAction="always"
+        android:icon="@drawable/trash"
+        android:title="Delete"/>
+</menu>

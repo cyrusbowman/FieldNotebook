@@ -68,11 +68,14 @@ import com.google.android.gms.maps.model.PolygonOptions;
 import com.openatk.fieldnotebook.FragmentAddField.AddFieldListener;
 import com.openatk.fieldnotebook.db.DatabaseHelper;
 import com.openatk.fieldnotebook.db.Field;
+import com.openatk.fieldnotebook.db.Image;
 import com.openatk.fieldnotebook.db.TableFields;
 import com.openatk.fieldnotebook.drawing.MyPolygon;
 import com.openatk.fieldnotebook.drawing.MyPolygon.MyPolygonListener;
 import com.openatk.fieldnotebook.fieldlist.FieldListListener;
 import com.openatk.fieldnotebook.fieldlist.FragmentFieldList;
+import com.openatk.fieldnotebook.imageviewer.FragmentImageViewer;
+import com.openatk.fieldnotebook.imageviewer.ImageViewerListener;
 import com.openatk.fieldnotebook.notelist.FragmentNoteList;
 import com.openatk.fieldnotebook.notelist.NoteListListener;
 import com.openatk.fieldnotebook.sidebar.FragmentSidebar;
@@ -82,7 +85,8 @@ import com.openatk.fieldnotebook.slider.SliderListener;
 
 public class MainActivity extends FragmentActivity implements OnClickListener,
 		OnMapClickListener, OnItemSelectedListener, OnMarkerClickListener, OnMarkerDragListener,
-		AddFieldListener, SliderListener, SidebarListener, NoteListListener, FieldListListener, MyPolygonListener {
+		AddFieldListener, SliderListener, SidebarListener, NoteListListener, FieldListListener, MyPolygonListener,
+		ImageViewerListener {
 	
 	private static String TAG = MainActivity.class.getName();
 	
@@ -104,6 +108,7 @@ public class MainActivity extends FragmentActivity implements OnClickListener,
 	private int sliderIsShowing = 0;
 	private int addIsShowing = 0;
 	private int drawingIsShowing = 0;
+	private int imageViewerIsShowing = 0;
 
 
 	@Override
@@ -140,6 +145,7 @@ public class MainActivity extends FragmentActivity implements OnClickListener,
 	FragmentDrawing fragmentDrawing = null;
 	FragmentNoteList fragmentNoteList = null;
 	FragmentFieldList fragmentFieldList = null;
+	FragmentImageViewer fragmentImageViewer = null;
 
 	ViewGroup vgSidebar = null;
 	
@@ -330,6 +336,7 @@ public class MainActivity extends FragmentActivity implements OnClickListener,
 	
 	@Override
 	public void onMapClick(LatLng position) {
+		Log.d("MainActivty", "OnMapClick");
 		if(this.fragmentNoteList == null){
 			this.fragmentNoteList = this.getFragmentNoteList();
 		}
@@ -359,28 +366,28 @@ public class MainActivity extends FragmentActivity implements OnClickListener,
 				if (curField.wasTouched(position)) {
 					// Touched this field
 					touched = true;
-
-					if (this.currentPolygon != null) {
-						// Set back to unselected if one is selected
-						this.currentPolygon.unselect();
-					}
-
-					// Load field and job data and show edit menu
 					Boolean sameField = false;
-					Field newField = FindFieldById(curField.getId());
-					if(currentField != null && currentField.getId() == curField.getId()){
+					if(currentField != null && curField.getId() == this.currentField.getId()){
 						sameField = true;
+						//Check if touched part of the note
+						if(this.fragmentNoteList != null) this.fragmentNoteList.onMapClick(position);
+					} else {
+						// Load field and job data and show edit menu
+						Field newField = FindFieldById(curField.getId());
+						// Set back to unselected if one is selected
+						if (this.currentPolygon != null)  this.currentPolygon.unselect();
+						currentField = newField;
+						currentPolygon = curField.getPolygon();
 					}
-					currentField = newField;
-					currentPolygon = curField.getPolygon();
-					this.currentPolygon.select();
+					
 					if (currentField == null) {
 						Log.d("MainActivity - onMapClick", "unable to find field by id");
 					} else {
-						if(sameField == false){								
+						if(sameField == false){
 							this.SliderRequestData(null); //Populate slider again
 							this.SidebarRequestData(null);
 							this.NoteListRequestData(null); //Populate note list again
+							this.currentPolygon.select();
 						}
 					}
 					showSlider(true);
@@ -493,6 +500,7 @@ public class MainActivity extends FragmentActivity implements OnClickListener,
 	public boolean onOptionsItemSelected(MenuItem item) {
 		if (item.getItemId() == R.id.main_menu_add) {
 			addFieldMapView();
+			return true;
 		} else if (item.getItemId() == R.id.main_menu_current_location) {
 			Location myLoc = map.getMyLocation();
 			if(myLoc == null){
@@ -502,8 +510,9 @@ public class MainActivity extends FragmentActivity implements OnClickListener,
 				CameraPosition newPos = new CameraPosition(new LatLng(myLoc.getLatitude(), myLoc.getLongitude()), map.getMaxZoomLevel(), oldPos.tilt, oldPos.bearing);
 				map.animateCamera(CameraUpdateFactory.newCameraPosition(newPos));
 			}
+			return true;
 		} else if (item.getItemId() == R.id.main_menu_list_view) {
-			if(sliderIsShowing == 0){
+			/*if(sliderIsShowing == 0){
 				showSlider(true);
 			} else {
 				hideSlider(true);
@@ -518,7 +527,8 @@ public class MainActivity extends FragmentActivity implements OnClickListener,
 				Log.d("MainActivity", "Showing list view");
 				setState(STATE_LIST_VIEW);
 				//item.setIcon(R.drawable.map_view);
-			}
+			}*/
+			return true;
 		} else if(item.getItemId() == R.id.main_menu_help){
 			AlertDialog.Builder alert = new AlertDialog.Builder(this);
 	        alert.setTitle("Help");
@@ -538,6 +548,7 @@ public class MainActivity extends FragmentActivity implements OnClickListener,
 	        alert.setView(wv);
 	        alert.setNegativeButton("Close", null);
 	        alert.show();
+	        return true;
 		} else if(item.getItemId() == R.id.main_menu_legal){
 			CharSequence licence= "The MIT License (MIT)\n" +
 	                "\n" +
@@ -565,11 +576,13 @@ public class MainActivity extends FragmentActivity implements OnClickListener,
 				.setMessage(licence)
 				.setIcon(android.R.drawable.ic_dialog_alert)
 				.setPositiveButton("Close", null).show();
+			return true;
 		}
-		return true;
+		return super.onOptionsItemSelected(item);
 	}
 
 	private Void addFieldMapView() {
+		ExitField();
 		// Add field (Polygon)
 		currentField = null;
 		showAdd(true);
@@ -658,6 +671,36 @@ public class MainActivity extends FragmentActivity implements OnClickListener,
 			ft.remove(fragment);
 			ft.commit();
 			fragmentDrawing = null;
+		}
+		this.invalidateOptionsMenu();
+	}
+	
+	private Void showImageViewer(Boolean transition) {
+		if (imageViewerIsShowing == 0) {
+			imageViewerIsShowing = 1;
+			FragmentManager fm = getSupportFragmentManager();
+			FragmentImageViewer fragment = new FragmentImageViewer();
+			FragmentTransaction ft = fm.beginTransaction();
+			//if (transition) ft.setCustomAnimations(R.anim.slide_down2, R.anim.slide_up2);
+			ft.add(R.id.fragment_container_image_viewer, fragment, "full_screen_imageviewer");
+			ft.commit();
+			fragmentImageViewer = fragment;
+		}
+		this.invalidateOptionsMenu();
+		return null;
+	}
+
+	private void hideImageViewer(Boolean transition) {
+		if (imageViewerIsShowing == 1) {
+			imageViewerIsShowing = 0;
+			FragmentManager fm = getSupportFragmentManager();
+			FragmentImageViewer fragment = (FragmentImageViewer) fm.findFragmentByTag("full_screen_imageviewer");
+			// Do transition
+			FragmentTransaction ft = fm.beginTransaction();
+			//if (transition) ft.setCustomAnimations(R.anim.slide_down2, R.anim.slide_up2);
+			ft.remove(fragment);
+			ft.commit();
+			fragmentImageViewer = null;
 		}
 		this.invalidateOptionsMenu();
 	}	
@@ -962,17 +1005,21 @@ public class MainActivity extends FragmentActivity implements OnClickListener,
 
 	@Override
 	public boolean onMarkerClick(Marker arg0) {
+		Log.d("MainActivity", "OnMarkerClick");
 		if(this.fragmentNoteList == null){
 			this.fragmentNoteList = this.getFragmentNoteList();
 		}
-		if(this.fragmentNoteList == null || this.fragmentNoteList.isAddingNote() == false){
+		if(this.fragmentNoteList == null || addingNotePolygon || this.fragmentNoteList.isAddingNote() == false){
 			Boolean found = false;
 			if (this.currentPolygon != null) {
 				found = this.currentPolygon.onMarkerClick(arg0);
 			}
 			if(found == false){
+				Log.d("MainActivity", "Marker not found");
 				this.onMapClick(arg0.getPosition());
 			}
+		} else {
+			this.onMapClick(arg0.getPosition());
 		}
 		return true;
 	}
@@ -1059,6 +1106,29 @@ public class MainActivity extends FragmentActivity implements OnClickListener,
 	}
 	
 	@Override
+	public void NoteListUndoPolygon(){
+		if(this.currentPolygon != null){
+			this.currentPolygon.undo();
+		}
+	}
+	
+	@Override
+	public void NoteListDeletePolygon(){
+		addingNotePolygon = false;
+		if(this.currentPolygon != null){
+			if(this.fragmentNoteList == null){
+				this.fragmentNoteList = this.getFragmentNoteList();
+			}
+			if(this.fragmentNoteList != null){
+				this.fragmentNoteList.deletePolygon(this.currentPolygon);
+			}
+			this.currentPolygon.delete();
+			this.currentPolygon = null;
+		}
+		saveFieldPolygon = null;
+	}
+	
+	@Override
 	public void NoteListRequestData(FragmentNoteList requester) {
 		if(requester != null) this.fragmentNoteList = requester;
 		if(this.fragmentNoteList == null){
@@ -1083,11 +1153,40 @@ public class MainActivity extends FragmentActivity implements OnClickListener,
 	public void NoteListHideDrawing() {
 		hideDrawing(true);		
 	}
+	
+	@Override
+	public FragmentImageViewer NoteListShowImageViewer() {
+		showImageViewer(true);
+		return this.fragmentImageViewer;
+	}
+
+	@Override
+	public void NoteListHideImageViewer() {
+		hideImageViewer(true);		
+	}
 
 	@Override
 	public void NoteListAddNote() {
 		
 	}
+	
+	// ----------------------------- ImageViewer -------------------------------
+	@Override
+	public void ImageViewerRequestData(FragmentImageViewer requester) {
+		if(this.fragmentNoteList != null){
+			this.fragmentNoteList.ImageViewerRequestDataFullsize(requester);
+		}
+	}
+	
+	@Override
+	public void ImageViewerDone(Image image) {
+		this.hideImageViewer(true);
+	}
+
+	@Override
+	public void ImageViewerClick(Image image) {
+		//Do nothing
+	}	
 	
 	// ----------------------------- FragmentSlider -------------------------------
 
@@ -1252,14 +1351,22 @@ public class MainActivity extends FragmentActivity implements OnClickListener,
 		// TODO Auto-generated method stub
 		
 	}
-
+	
 	@Override
 	public void FieldListSelectField(Field selectedField) {
 		this.currentField = selectedField;
+		
+		for(int i=0; i < FieldsOnMap.size(); i++) {
+			Field curField = FieldsOnMap.get(i);
+			if(curField.getId() == selectedField.getId()){
+				currentPolygon = curField.getPolygon();
+				break;
+			}
+		}
+		if(currentPolygon != null) this.currentPolygon.select();
+		
 		this.SidebarRequestData(null);
 		this.NoteListRequestData(null); //Populate notes again
 	}
-
-
 }
 

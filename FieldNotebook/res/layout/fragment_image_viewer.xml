@@ -1,16 +1,17 @@
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:id="@+id/fragment_image_viewer_layout">
        
-   
-    <ImageView 
-        android:id="@+id/fragment_image_viewer_image"
+    
+    <com.openatk.fieldnotebook.imageviewer.HackyViewPager
+	    android:id="@+id/fragment_image_viewer_view_pager"
 	    android:layout_width="match_parent"
 	    android:layout_height="match_parent"
 	    android:scaleType="fitCenter"
 	    android:layout_marginLeft="7dp"
-	    android:layout_marginTop="7dp"
-        />    
+	    android:layout_marginTop="7dp" />
+    
     <ImageButton 
         android:id="@+id/fragment_image_viewer_done"
 	    android:layout_width="wrap_content"

@@ -41,7 +41,7 @@ public class Note {
 	//private List<MyLine> lines;
 	//private List<MyPoint> points;
 	private Integer color = Color.RED;
-	private Integer visible = 0;
+	private Integer visible = 1;
 	private Integer deleted = 0;
 	
 	public Note(){
@@ -81,10 +81,13 @@ public class Note {
 		}
 		this.strPolygons = buildNewPolygons.toString();
 	}
-	public void removePolygons(){
+	public void removePolygonsFromMap(){
 		for(int i=0; i<myPolygons.size(); i++){
 			myPolygons.get(i).remove();
 		}
+	}
+	public void removePolygons(){
+		myPolygons.removeAll(myPolygons);
 	}
 	public void removePolygon(MyPolygon poly){
 		myPolygons.remove(poly);
@@ -115,10 +118,13 @@ public class Note {
 		}
 		this.strPolylines = buildNewPolylines.toString();
 	}
-	public void removePolylines(){
+	public void removePolylinesFromMap(){
 		for(int i=0; i<myPolylines.size(); i++){
 			myPolylines.get(i).remove();
 		}
+	}
+	public void removePolylines(){
+		myPolylines.removeAll(myPolylines);
 	}
 	public void removePolyline(MyPolyline poly){
 		myPolylines.remove(poly);
@@ -144,10 +150,13 @@ public class Note {
 		}
 		this.strMarkers = build.toString();
 	}
-	public void removeMarkers(){
+	public void removeMarkersFromMap(){
 		for(int i=0; i<myMarkers.size(); i++){
 			myMarkers.get(i).remove();
 		}
+	}
+	public void removeMarkers(){
+		myMarkers.removeAll(myMarkers);
 	}
 	public void removeMarker(MyMarker it){
 		myMarkers.remove(it);

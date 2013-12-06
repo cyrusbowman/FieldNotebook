@@ -38,6 +38,7 @@ public class FragmentSidebar extends Fragment implements OnClickListener, OnTouc
 	private TextView tvName;
 	private TextView tvAcres;
 	private ImageButton butEditField;
+	private ImageButton butAddField;
 	private Button butAddNote;
 	private ImageButton butBackToFields;
 	
@@ -79,6 +80,7 @@ public class FragmentSidebar extends Fragment implements OnClickListener, OnTouc
 		//tvAcres.setOnTouchListener(this);
 		
 		butEditField = (ImageButton) view.findViewById(R.id.sidebar_butEditField);
+		butAddField = (ImageButton) view.findViewById(R.id.sidebar_butAddField);
 		butAddNote = (Button) view.findViewById(R.id.sidebar_butAddNote);
 		butBackToFields = (ImageButton) view.findViewById(R.id.sidebar_butBackToFields);
 		fieldMenu = (ViewGroup) view.findViewById(R.id.sidebar_layMenuFields);
@@ -87,6 +89,7 @@ public class FragmentSidebar extends Fragment implements OnClickListener, OnTouc
 		noteListContainer = (ViewGroup) view.findViewById(R.id.sidebar_fragment_listNotes_container);
 
 		butEditField.setOnClickListener(this);
+		butAddField.setOnClickListener(this);
 		butAddNote.setOnClickListener(this);
 		butBackToFields.setOnClickListener(this);
 				

@@ -17,4 +17,5 @@ public interface ImageViewerListener {
 	 */
 	public void ImageViewerRequestData(FragmentImageViewer requester);
 	public void ImageViewerDone(Image image);
+	public void ImageViewerClick(Image image);
 }

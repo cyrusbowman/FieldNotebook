@@ -144,6 +144,7 @@ public class MyPolyline implements OnMapClickListener, OnMarkerDragListener, OnM
 			selectMarker(markerIndex);
 			return true;
 		} else {
+			this.onMapClick(marker.getPosition());
 			return true; //Consume click stop autocenter, only our markers clickable
 		}
 	}

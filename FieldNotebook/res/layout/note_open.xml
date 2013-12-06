@@ -11,7 +11,8 @@
 	    android:layout_width="match_parent"
 	    android:layout_height="match_parent"
 	    android:layout_alignParentTop="true"
-	    android:layout_alignParentLeft="true">
+	    android:layout_alignParentLeft="true"
+	    android:layout_alignParentRight="true">
 	    <RelativeLayout
 	        android:id="@+id/note_open_row1"
 		    android:layout_width="match_parent"
@@ -26,13 +27,10 @@
 				android:padding="7dp"
 				android:layout_marginLeft="10dp"
 				android:layout_marginRight="10dp"
-				android:textSize="16sp"
+				android:textSize="22sp"
 				android:hint="Comment"
 				android:textColor="#000"
-				android:inputType="textMultiLine"
-				android:lines="8"
-				android:minLines="6"
-				android:maxLines="10"
+				android:inputType="textMultiLine|textNoSuggestions|textVisiblePassword"
 				android:gravity="top|left"
 				android:scrollbars="vertical"
 				android:background="#FFF"
@@ -44,13 +42,22 @@
 		    android:layout_width="match_parent"
 		    android:layout_height="wrap_content"
 		    android:layout_below="@+id/note_open_row1"
-		    android:layout_marginTop="10dp">
+		    android:layout_marginTop="10dp"
+		    android:paddingBottom="10dp">
+		    <ImageButton 
+	            android:id="@+id/note_open_butDelete"
+		        android:layout_width="50dp"
+		        android:layout_height="50dp"
+		        android:layout_alignParentRight="true"
+	           	/>
 		    <HorizontalScrollView
 		        android:layout_width="wrap_content"
 		    	android:layout_height="wrap_content"
 		        android:id="@+id/note_open_sv_objects"
 		        android:layout_marginLeft="10dp"
-				android:layout_marginRight="10dp">
+				android:layout_marginRight="10dp"
+				android:layout_alignParentLeft="true"
+				android:layout_toLeftOf="@+id/note_open_butDelete">
 		        <LinearLayout 
 		            android:layout_width="wrap_content"
 		    		android:layout_height="wrap_content"
@@ -59,28 +66,6 @@
 		            />
 		    </HorizontalScrollView>
 	   </RelativeLayout>
-	   <RelativeLayout
-	        android:id="@+id/note_open_row3"
-		    android:layout_width="match_parent"
-		    android:layout_height="wrap_content"
-		    android:layout_below="@+id/note_open_row2"
-		    android:layout_marginTop="10dp">
-		    <ImageButton 
-	            android:id="@+id/note_open_butDone"
-		        android:layout_width="50dp"
-		        android:layout_height="50dp"
-		        android:layout_alignParentLeft="true"
-		        android:layout_alignParentTop="true"
-		        android:src="@drawable/done"
-	           	/>
-		    <ImageButton 
-	            android:id="@+id/note_open_butDelete"
-		        android:layout_width="50dp"
-		        android:layout_height="50dp"
-		        android:layout_alignParentRight="true"
-		        android:layout_alignParentTop="true"
-	           	/>
-	   </RelativeLayout>
 	</RelativeLayout>
 	<FrameLayout
         android:id="@+id/note_open_imageViewer"
@@ -88,5 +73,6 @@
 	    android:layout_height="wrap_content"
 	    android:layout_alignParentTop="true"
 	    android:layout_alignParentLeft="true"
-	    android:visibility="gone"/>
+	    android:visibility="gone"
+	    android:paddingBottom="10dp" />
 </RelativeLayout>

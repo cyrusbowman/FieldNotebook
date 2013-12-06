@@ -31,5 +31,12 @@
 	    android:layout_alignParentTop="true"
 	    android:layout_toRightOf="@+id/fragment_container_sidebar"
 	     />	
+	<FrameLayout
+	    android:id="@+id/fragment_container_image_viewer"
+	    android:layout_width="match_parent"
+	    android:layout_height="match_parent"
+	    android:layout_alignParentTop="true"
+	    android:layout_alignParentLeft="true"
+	     />	
 	     
 </RelativeLayout>

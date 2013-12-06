@@ -1,55 +1,49 @@
 package com.openatk.fieldnotebook.imageviewer;
 
+import java.util.ArrayList;
 import java.util.List;
 
+import uk.co.senab.photoview.PhotoView;
+import uk.co.senab.photoview.PhotoViewAttacher.OnPhotoTapListener;
+
 import com.openatk.fieldnotebook.R;
-import com.openatk.fieldnotebook.MainActivity.DropDownAnim;
-import com.openatk.fieldnotebook.db.Field;
 import com.openatk.fieldnotebook.db.Image;
-import com.openatk.fieldnotebook.notelist.FragmentNoteList;
 
 import android.app.Activity;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.graphics.Point;
+import android.graphics.Color;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
-import android.support.v4.app.FragmentManager;
-import android.support.v4.app.FragmentTransaction;
+import android.support.v4.view.PagerAdapter;
+import android.support.v4.view.ViewPager;
 import android.util.Log;
-import android.view.Display;
 import android.view.LayoutInflater;
-import android.view.MotionEvent;
 import android.view.View;
 import android.view.View.OnClickListener;
-import android.view.View.OnTouchListener;
-import android.view.animation.Animation;
-import android.view.animation.Transformation;
+import android.view.ViewGroup.LayoutParams;
 import android.view.ViewGroup;
-import android.widget.Button;
-import android.widget.FrameLayout;
 import android.widget.ImageButton;
-import android.widget.ImageView;
-import android.widget.RelativeLayout;
-import android.widget.TextView;
 
 
-public class FragmentImageViewer extends Fragment implements OnClickListener, OnTouchListener {
+public class FragmentImageViewer extends Fragment implements OnClickListener {
 	private static final String TAG = FragmentImageViewer.class.getSimpleName();
 
 	
-	private ImageView ivImage;
 	private ImageButton butDone;
 	
 	private ImageViewerListener listener;
 	
 	private Boolean initialCreate;
-	private List<Image> images;
+	private List<Drawable> drawables = new ArrayList<Drawable>();
+	private List<Image> images = new ArrayList<Image>();
+	
 	private Image currentImage = null;
 	private Integer currentImageIndex = null;
-
+	ViewPager mViewPager = null;
+	
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
@@ -58,7 +52,7 @@ public class FragmentImageViewer extends Fragment implements OnClickListener, On
 			initialCreate = true;
 		} else {
 			initialCreate = false;
-		}
+		}		
 	}
 	
 	@Override
@@ -66,14 +60,11 @@ public class FragmentImageViewer extends Fragment implements OnClickListener, On
 			Bundle savedInstanceState) {
 		View view = inflater.inflate(R.layout.fragment_image_viewer, container, false);
 		
+		mViewPager = (HackyViewPager) view.findViewById(R.id.fragment_image_viewer_view_pager);
 		butDone = (ImageButton) view.findViewById(R.id.fragment_image_viewer_done);
-		ivImage = (ImageView) view.findViewById(R.id.fragment_image_viewer_image);
-
-		ivImage.setOnTouchListener(this);
-		
+		mViewPager.setVisibility(View.GONE);
+		mViewPager.setOnClickListener(this);
 		butDone.setOnClickListener(this);
-		ivImage.setOnClickListener(this);
-
 		return view;
 	}
 	
@@ -100,91 +91,70 @@ public class FragmentImageViewer extends Fragment implements OnClickListener, On
 		listener.ImageViewerRequestData(this);
 	}
 
-	public void populateData(List<Image> images, Image clicked) {
+	public void populateData(List<Image> images, Image clicked, int size) {
 		Log.d(TAG, "Populate Data");
-		this.images = images;
 		this.currentImage = clicked;
-		for(int i=0; i<images.size(); i++){
-			if(this.currentImage == images.get(i)){
+		this.images = images;
+		
+		if(size != 0){
+			//Fullscreen
+			this.getView().setBackgroundColor(Color.argb(220, 0, 0, 0));
+		}
+		
+		for(int i=0; i<this.images.size(); i++){
+			Bitmap bitmap = BitmapFactory.decodeFile(this.images.get(i).getPath());
+			Drawable d = new BitmapDrawable(getResources(), bitmap);
+			drawables.add(d);
+			if(this.currentImage == this.images.get(i)){
 				this.currentImageIndex = i;
 			}
 		}
-		
-		Bitmap bitmap = BitmapFactory.decodeFile(this.currentImage.getPath());
-		Drawable d = new BitmapDrawable(this.getResources(), bitmap);
-		
-		this.ivImage.setImageDrawable(d);
+		mViewPager.setAdapter(new SamplePagerAdapter());
+		mViewPager.setCurrentItem(this.currentImageIndex);
+		mViewPager.setVisibility(View.VISIBLE);
 	}
 
 	@Override
 	public void onClick(View v) {
 		if (v.getId() == R.id.fragment_image_viewer_done) {
-			this.ivImage.setVisibility(View.GONE);
 			this.listener.ImageViewerDone(this.currentImage);
+		} else if(v == this.mViewPager){
+			int item = mViewPager.getCurrentItem();
+			listener.ImageViewerClick(images.get(item));
 		}
 	}
 	
-	@Override
-	public boolean onTouch(View v, MotionEvent event) {
-		float eventY = event.getRawY();
-		float eventX = event.getRawX();
-		
-		switch (event.getAction())
-        {
-            case MotionEvent.ACTION_DOWN:
-            {
-            	this.DragDown(eventX);
-               break; 
-            }
-            case MotionEvent.ACTION_UP:
-            {     
-            	 this.DragUp(eventX);
-                 break;
-            }
-            case MotionEvent.ACTION_MOVE:
-            {
-            	this.DragDragging(eventX);
-                break;
-            }
-        }
-        return true;
-	}
-	
-	private float startDrag = 0;
-	private void DragDown(float start) {
-		startDrag = start;
-	}
-
-	private void DragDragging(float whereX) {
-		this.ivImage.setTranslationX(whereX - startDrag);
-	}
-	
-	private void DragUp(float whereX) {
-		if(Math.abs(whereX - startDrag) > 10.0f){
-			//Switch images
-			Image newImage = null;
-			if((whereX - startDrag) > 0){
-				//Prev
-				if(this.currentImageIndex != 0){
-					this.currentImageIndex = this.currentImageIndex - 1;
-					newImage = this.images.get(this.currentImageIndex);
-				}
-			} else {
-				//Next
-				if(this.currentImageIndex != (this.images.size() - 1)){
-
-					this.currentImageIndex = this.currentImageIndex + 1;
-					newImage = this.images.get(this.currentImageIndex);
-				}
-			}
-			if(newImage != null){
-				this.currentImage = newImage;
-				Bitmap bitmap = BitmapFactory.decodeFile(this.currentImage.getPath());
-				Drawable d = new BitmapDrawable(this.getResources(), bitmap);
-				this.ivImage.setImageDrawable(d);
-			}
+	class SamplePagerAdapter extends PagerAdapter implements OnPhotoTapListener {
+		@Override
+		public int getCount() {
+			return drawables.size();
 		}
-		this.ivImage.clearAnimation();
-		this.ivImage.setTranslationX(0.0f);
+
+		@Override
+		public View instantiateItem(ViewGroup container, int position) {
+			PhotoView photoView = new PhotoView(container.getContext());
+			photoView.setImageDrawable(drawables.get(position));
+			photoView.setOnPhotoTapListener(this);
+			// Now just add PhotoView to ViewPager and return it
+			container.addView(photoView, LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT);
+			return photoView;
+		}
+
+		@Override
+		public void destroyItem(ViewGroup container, int position, Object object) {
+			container.removeView((View) object);
+		}
+
+		@Override
+		public boolean isViewFromObject(View view, Object object) {
+			return view == object;
+		}
+
+		@Override
+		public void onPhotoTap(View view, float x, float y) {
+			int item = mViewPager.getCurrentItem();
+			listener.ImageViewerClick(images.get(item));
+		}
+
 	}
 }
